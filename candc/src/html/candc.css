@@ -1,0 +1,72 @@
+span {
+  float: left;
+  position: relative;
+}
+
+div.candc {
+  float: left;
+}
+
+div.ccg {
+  clear: left;
+  padding-top: 1em;
+  width: 1000em;
+}
+
+div.children {
+  margin-bottom: 0.1em;
+}
+
+span.leaf {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+div.word {
+  text-align: center;
+}
+
+div.tags {
+  margin-top: 0.2em;
+  text-align: center;
+  font-size: 60%;
+}
+
+a.result {
+  clear: both;
+  display: block;
+  border-top: 0.1em solid #000;
+  text-align: center;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  font-size: 60%;
+}
+
+span.rule {
+  display: inline;
+  float: left;
+  margin-left: 0.1em;
+  margin-left: 0.1em;
+}
+
+/*
+span.rule:after {
+  font-size: small;
+  vertical-align: bottom;
+}
+
+span.fa:after {
+//  content: ">";
+  bottom: -5px;
+  right: -5px;
+}
+
+span.ba:after {
+  content: "<";
+}
+
+span.rp:after {
+  content: "<p";
+}
+*/

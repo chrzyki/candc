@@ -1,0 +1,25 @@
+#!/bin/bash
+
+PORT=$1
+VERSION=src/lib/version.cc
+
+(
+echo    'namespace NLP {'
+echo -n '  const char *VERSION = "'
+
+if [[ -a .svn ]]; then
+  svnversion -n . | tr -d '\n';
+else
+  tr -d '\n' < RELEASE.txt;
+fi
+
+echo '";'
+echo
+
+echo -n '  const char *BUILD = "('
+echo -n $PORT 'build on' `date '+%e %B %Y, %T' | sed 's/^ //'`
+echo ')";'
+
+echo '}'
+
+) > $VERSION

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:template match="/candc">
+<html>
+<head>
+  <link href="candc.css" rel="stylesheet" type="text/css" />
+  <script src="candc.js" type="text/javascript" language="javascript" />
+</head>
+<body>
+<xsl:apply-templates />
+</body>
+</html>
+</xsl:template>
+
+<xsl:template match="ccg">
+<div class="ccg">
+<xsl:apply-templates />
+</div>
+</xsl:template>
+
+<xsl:template match="rule">
+<span>
+<xsl:variable name="ID" select="generate-id()"/>
+  <xsl:attribute name="class">rule <xsl:value-of select="@type" /></xsl:attribute>
+  <div class="children">
+    <xsl:apply-templates />
+  </div>
+  <a class="result" id="{$ID}" onClick="tog('{$ID}')" onMouseOver="mo('{$ID}')" onMouseOut="mu('{$ID}')">
+    <xsl:value-of select="@cat" />
+  </a>
+</span>
+</xsl:template>
+
+<xsl:template match="lf">
+<span class="leaf">
+  <div class="word">
+    <xsl:value-of select="@word" />
+  </div>
+  <div class="tags pos">
+    <xsl:value-of select="@pos" />
+  </div>
+  <div class="tags cat">
+    <xsl:value-of select="@cat" />
+  </div>
+</span>
+</xsl:template>
+
+</xsl:stylesheet>

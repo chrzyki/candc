@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!ELEMENT xdrs-output (xdrs+)>
+<!ATTLIST xdrs-output  
+          version CDATA #REQUIRED >
+
+
+<!ELEMENT xdrs (words,postags,netags,(drs|merge|alfa))>
+<!ATTLIST xdrs
+          xml:id ID #IMPLIED >
+
+
+<!ELEMENT drs (dr*,(timex|named|pred|card|rel|prop|not|or|imp|whq)*)>
+
+<!ELEMENT merge ((drs|merge|alfa),(drs|merge|alfa))>
+
+<!ELEMENT alfa ((drs|merge|alfa),(drs|merge|alfa))>
+<!ATTLIST alfa
+          type CDATA #REQUIRED >
+
+
+<!ELEMENT index (#PCDATA)>
+<!ATTLIST index
+          pos CDATA #REQUIRED >
+
+
+<!ELEMENT dr (index*)>
+<!ATTLIST dr
+          name CDATA #REQUIRED >
+
+<!ELEMENT pred (index*)>
+<!ATTLIST pred
+          arg CDATA #REQUIRED 
+          symbol CDATA #REQUIRED 
+          type CDATA #REQUIRED 
+          sense CDATA #REQUIRED >
+
+<!ELEMENT named (index*)>
+<!ATTLIST named
+          arg CDATA #REQUIRED 
+          symbol CDATA #REQUIRED 
+          type CDATA #REQUIRED >
+
+<!ELEMENT rel (index*)>
+<!ATTLIST rel
+          arg1 CDATA #REQUIRED 
+          arg2 CDATA #REQUIRED 
+          symbol CDATA #REQUIRED 
+          sense CDATA #REQUIRED >
+
+<!ELEMENT card (index*)>
+<!ATTLIST card
+          arg CDATA #REQUIRED 
+          value CDATA #REQUIRED 
+          type CDATA #REQUIRED >
+
+
+<!ELEMENT not (index*,(drs|merge|alfa))>
+
+<!ELEMENT or (index*,((drs|merge|alfa),(drs|merge|alfa)))>
+
+<!ELEMENT imp (index*,((drs|merge|alfa),(drs|merge|alfa)))>
+
+<!ELEMENT whq (index*,((drs|merge|alfa),(drs|merge|alfa)))>
+
+<!ELEMENT prop (index*,(drs|merge|alfa))>
+<!ATTLIST prop
+          argument CDATA #REQUIRED >
+
+<!ELEMENT timex (index*,(date|time))>
+<!ATTLIST timex
+          arg CDATA #REQUIRED >
+
+<!ELEMENT date (#PCDATA)>
+<!ELEMENT time (#PCDATA)>
+
+<!ELEMENT words (word+)>
+<!ELEMENT word (#PCDATA)>
+<!ATTLIST word
+          xml:id ID #REQUIRED >
+
+<!ELEMENT postags (postag+)>
+<!ELEMENT postag (#PCDATA)>
+<!ATTLIST postag
+          index IDREF #REQUIRED >
+
+<!ELEMENT netags (netag*)>
+<!ELEMENT netag (#PCDATA)>
+<!ATTLIST netag
+          index IDREF #REQUIRED >
