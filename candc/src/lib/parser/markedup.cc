@@ -45,6 +45,7 @@ public:
   void add(const std::string &plain_str, const std::string &markedup_str, const Cat *cat){
     CatMarkedup cm = { cat, markedup_str };
     _ImplBase::add(plain_str)->value = cm;
+    _ImplBase::add(markedup_str)->value = cm;
   }
 };
 

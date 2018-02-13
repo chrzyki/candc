@@ -123,7 +123,7 @@ GRTemplate::set_cat(const Categories &cats){
 }
 
 bool
-GRTemplate::satisfy(const Sentence &sent, const SuperCat *sc, const Filled *dep) const {
+GRTemplate::satisfy(const Sentence &sent, const SuperCat *, const Filled *dep) const {
   if(!constrained)
     return true;
 
@@ -142,7 +142,7 @@ GRTemplate::satisfy(const Sentence &sent, const SuperCat *sc, const Filled *dep)
 
 void
 GRTemplate::get(GRs &grs, const std::string &format, const Sentence &sent,
-		const SuperCat *sc, const Filled *dep, const Filled *other,
+		const SuperCat *, const Filled *dep, const Filled *other,
 		const Filled *constraint) const {
 
   GR result;

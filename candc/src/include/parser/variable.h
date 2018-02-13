@@ -90,7 +90,7 @@ namespace NLP {
         return stream << " }";
       }else
         return var.out(stream);
-    };
+    }
 
     inline bool operator!=(const Variable &v1, const Variable &v2){
       return memcmp(v1.fillers, v2.fillers, sizeof(v1.fillers));

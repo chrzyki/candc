@@ -66,4 +66,25 @@ Atom::operator const char *(void) const {
   return 0;
 }
 
+const char *
+Atom::prolog(void) const {
+  switch(_value){
+    case Atoms::COLON: return "colon";
+    case Atoms::COMMA: return "comma";
+    case Atoms::CONJ: return "conj";
+    case Atoms::LRB: return "lrb";
+    case Atoms::LQU: return "lqu";
+    case Atoms::N: return "n";
+    case Atoms::NP: return "np";
+    case Atoms::PERIOD: return "period";
+    case Atoms::PP: return "pp";
+    case Atoms::RRB: return "rrb";
+    case Atoms::RQU: return "rqu";
+    case Atoms::S: return "s";
+    case Atoms::SEMICOLON: return "semi";
+    default: assert(!"illegal atom value in Prolog representation");
+  }
+  return 0;
+}
+
 } }

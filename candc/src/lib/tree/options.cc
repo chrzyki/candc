@@ -8,12 +8,7 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-#include <cassert>
-#include <cctype>
-#include <string>
-#include <algorithm>
-#include <iostream>
-#include <fstream>
+#include "std.h"
 
 using namespace std;
 

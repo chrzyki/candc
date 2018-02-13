@@ -11,7 +11,19 @@
 // NLP::MaxEnt::GIS
 // Generalised Iterative Scaling implementation
 
+#include <cassert>
+#include <cmath>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <algorithm>
+#include <sstream>
+
 #include "base.h"
+
+#include "cluster.h"
 
 #include "prob.h"
 
@@ -23,6 +35,8 @@
 #include "maxent/attribute.h"
 #include "maxent/context.h"
 #include "maxent/gis.h"
+
+#include  <cstring>
 
 using namespace std;
 
@@ -49,6 +63,9 @@ GIS::_read_features(void){
 
   read_preface(model.features(), stream, nlines);
 
+  if(Cluster::USE_MPI && Cluster::rank == 0)
+    cout << "0 reading " << model.features() << endl << flush;
+
   ulong previous = static_cast<ulong>(-1);
   ulong klass, attribute, freq;
   while(stream >> klass >> attribute >> freq){
@@ -64,6 +81,15 @@ GIS::_read_features(void){
       attributes.push_back(&features.back());
       previous = attribute;
     }
+  }
+
+  // Create space for MPI storage of feature estimates
+  if (Cluster::USE_MPI){
+    local_est = new double[info.nfeatures()];
+    global_est = new double[info.nfeatures()];
+  }else{
+    local_est = 0;
+    global_est = 0;
   }
 
   if(!stream.eof())
@@ -89,11 +115,13 @@ GIS::_read_contexts(void){
 
   read_preface(model.contexts(), stream, nlines);
 
+  if(Cluster::USE_MPI && Cluster::rank == 0)
+    cout << Cluster::rank << " reading " << model.contexts() << endl << flush;
+
   long freq;
   ushort klass, nattributes;
   while(stream >> freq >> klass >> nattributes){
     ++nlines;
-
     Context *context = new (nattributes) Context(freq, klass, nattributes);
     Attribute *attrs = context->begin();
     memset(attrs, 0, sizeof(Attribute *)*nattributes);
@@ -144,9 +172,14 @@ GIS::_calc_correction(void){
   for(Contexts::iterator context = contexts.begin(); context != contexts.end(); ++context)
     max_active = max(max_active, _max_attributes(*context, nactives));
 
+  // For MPI we have to get max active attributes across all nodes
+  if (Cluster::USE_MPI)
+    Cluster::max(max_active);
+
   C = max_active;
   invC = 1.0/static_cast<double>(C);
-  if(VERBOSE)
+  if((VERBOSE) &&
+    (!Cluster::USE_MPI || Cluster::rank == 0))
     cout << "max_active = " << max_active << endl;
 }
 
@@ -154,15 +187,18 @@ GIS::GIS(const Model::Model &model, bool verbose)
   : model(model), info(model.info()), NKLASSES(info.nklasses()),
     ALPHA(1/(model.sigma()*model.sigma())), VERBOSE(verbose){
 
-  if(VERBOSE)
+  if((VERBOSE) &&
+    (!Cluster::USE_MPI || Cluster::rank == 0))
     cout << "reading features in" << endl;
   _read_features();
 
-  if(VERBOSE)
+  if((VERBOSE) &&
+    (!Cluster::USE_MPI || Cluster::rank == 0))
     cout << "reading contexts in" << endl;
   _read_contexts();
 
-  if(VERBOSE)
+  if((VERBOSE) &&
+    (!Cluster::USE_MPI || Cluster::rank == 0))
     cout << "calculating correction constant maxC" << endl;
   _calc_correction();
 }
@@ -171,7 +207,8 @@ GIS::~GIS(void){}
 
 void
 GIS::load_weights(const std::string &filename){
-  if(VERBOSE)
+  if((VERBOSE) &&
+    (!Cluster::USE_MPI || Cluster::rank == 0))
     cout << "reading existing weights from " << filename << endl;
 
   ulong nlines = 0;
@@ -252,7 +289,31 @@ GIS::_distribute(PDF &p_classes){
     _estimate(*context, p_classes);
     llhood += (*context)->llhood(p_classes);
   }
+
+  // If we are using MPI, find the sum of the objectives
+  if(Cluster::USE_MPI)
+    Cluster::sum(llhood);
+
   return llhood;
+}
+
+void
+GIS::_sum_estimates(void){
+  if(!Cluster::USE_MPI)
+    return;
+
+  if(VERBOSE && Cluster::rank == 0)
+    cout << ", sum" << flush;
+      
+  // Distribute the feature estimates
+  for(ulong i = 0; i < info.nfeatures(); ++i)
+    local_est[i] = features[i].est;
+
+  Cluster::sum(local_est, global_est, info.nfeatures());
+
+  // And copy back the results
+  for(ulong i = 0; i < info.nfeatures(); ++i)
+    features[i].est = global_est[i];
 }
 
 // call the update rule on every feature
@@ -288,28 +349,31 @@ GIS::iterate(void){
   PDF p_classes(NKLASSES, 0.0);
 
   for(ulong iteration = 0; iteration < model.niterations(); ++iteration){
-    if(VERBOSE){
+    if((VERBOSE) &&
+      (!Cluster::USE_MPI || Cluster::rank == 0))
       cout << iteration << ": normalise, estimate" << flush;
-    }
 
     double objective = _distribute(p_classes);
 
-    if(VERBOSE)
+    if((VERBOSE) &&
+      (!Cluster::USE_MPI || Cluster::rank == 0))
       cout << ", update" << flush;
 
     for(Features::iterator i = features.begin(); i != features.end(); ++i)
       objective -= i->penalty_gaussian(ALPHA);
 
+    _sum_estimates();
+
     _update();
 
-    if(VERBOSE)
+    if((VERBOSE) &&
+      (!Cluster::USE_MPI || Cluster::rank == 0))
       cout << ", objective = " << objective << endl;
   }
-
-  if(VERBOSE){
-    double objective = _distribute(p_classes);
+  
+  double objective = _distribute(p_classes);
+  if((VERBOSE) && (!Cluster::USE_MPI || Cluster::rank == 0))
     cout << "final objective = " << objective << endl;
-  }
 }
 
 // perform a single iteration of GIS
@@ -331,6 +395,7 @@ GIS::save(const std::string &PREFACE){
     throw IOException("could not open weights file for writing", model.weights());
 
   stream << PREFACE << '\n';
+  stream.precision(15);
 
   for(ulong attr = 0; attr != attributes.size() - 1; ++attr)
     for(Feature* feature = attributes[attr]; feature != attributes[attr + 1]; ++feature)

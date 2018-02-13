@@ -31,7 +31,7 @@ namespace NLP {
 
   // take a reference to a ref counted object
   template <class T>
-  T *share(T *t){ t->inc_ref(); return t; };
+  T *share(T *t){ t->inc_ref(); return t; }
 
   // relinquish a ref counted object
   template <class T>
@@ -40,6 +40,6 @@ namespace NLP {
       delete t;
       t = 0;
     }
-  };
+  }
 
 }

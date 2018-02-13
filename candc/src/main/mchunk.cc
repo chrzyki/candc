@@ -17,5 +17,5 @@ const char *PROGRAM_NAME = "mchunk";
 
 int
 run(int argc, char **argv){
-  return run_tag<Tagger::Chunk>(true, 5, 0.1, "%w|%p \n", "%w\t%p\t%C\n\n\n", argc, argv);
+  return run_tag<Taggers::Chunk>(true, 5, 0.1, "%w|%p \n", "%w\t%p\t%C\n\n\n", argc, argv);
 }

@@ -45,7 +45,7 @@ const char *PROGRAM_NAME = "parser";
 using namespace std;
 using namespace NLP;
 using namespace NLP::IO;
-using namespace NLP::Tagger;
+using namespace NLP::Taggers;
 using namespace NLP::CCG;
 
 int
@@ -70,8 +70,7 @@ run(int argc, char** argv){
 
   Config::Restricted<std::string> decoder_name(cfg, SPACE, "decoder", "the parser decoder [deps, derivs, random]",
 					       &DecoderFactory::check, "derivs");
-  Config::Restricted<std::string> printer_name(cfg, "printer", "the parser output printer [prolog, deps, grs]",
-					       &PrinterFactory::check, "grs");
+  Config::Restricted<std::string> printer_name(cfg, "printer", "the parser output printer [deps, prolog, boxer, ccgbank, grs, xml, debug, js]", &PrinterFactory::check, "grs");
   Config::Op<bool> force_words(cfg, "force_words", "force the parser to print words on fails", true);
 
   Config::Op<bool> oracle(cfg, SPACE, "oracle", "use gold standard supertags from input", false);
@@ -146,6 +145,11 @@ run(int argc, char** argv){
   log.stream << "nsentences = " << integration.nsentences << endl;
 
   log.stream << "nexceptions = " << integration.nexceptions << endl;
+
+  log.stream << "ncombines = " << integration.global_stats.ncombines << endl;
+  log.stream << "ncombines_zeros = " << integration.global_stats.ncombines_zeros << endl;
+  log.stream << "ncombines_reduced = " << integration.global_stats.ncombines_reduced << endl;
+  log.stream << "ncombines_rejected = " << integration.global_stats.ncombines_rejected << endl;
 
   ulong nfail_bound = integration.nfail_nospan + integration.nfail_explode;
   ulong nfail_back = integration.nfail_nospan_explode + integration.nfail_explode_nospan;

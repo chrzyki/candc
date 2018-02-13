@@ -112,7 +112,7 @@ Parser::_Impl::print_forest(InsideOutside &inside_outside, ostream &out, ulong i
 
 
 void
-Parser::_Impl::print_leaf_features(InsideOutside &inside_outside, ostream &out, ulong pos,
+Parser::_Impl::print_leaf_features(InsideOutside &, ostream &out, ulong,
 				   const SuperCat *leaf, const Words &words, const Words &tags){
   out << "0 ";
   ids.resize(0);
@@ -130,7 +130,7 @@ Parser::_Impl::print_leaf_features(InsideOutside &inside_outside, ostream &out, 
 
 
 void
-Parser::_Impl::print_unary_features(InsideOutside &inside_outside, ostream &out, const SuperCat *sc,
+Parser::_Impl::print_unary_features(InsideOutside &, ostream &out, const SuperCat *sc,
 				    const Words &words, const Words &tags){
   out << "1 " << sc->left->marker << ' ';
 

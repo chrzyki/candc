@@ -1,25 +1,63 @@
 #!/bin/bash
 
 PORT=$1
-VERSION=src/lib/version.cc
+CPP_VERSION=src/lib/version.cc
+PROLOG_VERSION=src/prolog/boxer/version.pl
 
-(
-echo    'namespace NLP {'
-echo -n '  const char *VERSION = "'
+ccpversion()
+{
+    (
+	echo    'namespace NLP {'
+	echo -n '  const char *VERSION = "v'
+	
+	if [[ -a .svn ]]; then
+	    svnversion -n . | tr -d '\n';
+	else
+	    tr -d '\n' < RELEASE.txt;
+	fi
+	
+	echo '";'
+	echo
+	
+	echo -n '  const char *BUILD = "('
+	echo -n $PORT 'build on' `date '+%e %B %Y, %T' | sed 's/^ //'`
+	echo ')";'
+	
+	echo '}'
+	
+	) > $CPP_VERSION
+}
 
-if [[ -a .svn ]]; then
-  svnversion -n . | tr -d '\n';
+swiversion()
+{
+    (
+	echo ':- module(version,[version/1]).'
+	echo -n "version('boxer "v
+	
+	if [[ -a .svn ]]; then
+	    svnversion -n . | tr -d '\n';
+	else
+	    tr -d '\n' < RELEASE.txt;
+	fi
+	
+	echo -n ' ('
+	echo -n $PORT 'build on' `date '+%e %B %Y, %T' | sed 's/^ //'`
+	echo ")').";
+	
+	) > $PROLOG_VERSION
+}
+
+ccpversion
+
+if [ -f ${PROLOG_VERSION} ]; then
+    SVN=`svnversion -n`
+    if [ `cat ${PROLOG_VERSION} | grep $SVN | wc -l` = "0" ]; then
+	swiversion
+    fi
 else
-  tr -d '\n' < RELEASE.txt;
+    swiversion
 fi
 
-echo '";'
-echo
+exit 0
 
-echo -n '  const char *BUILD = "('
-echo -n $PORT 'build on' `date '+%e %B %Y, %T' | sed 's/^ //'`
-echo ')";'
 
-echo '}'
-
-) > $VERSION

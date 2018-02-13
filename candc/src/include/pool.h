@@ -14,6 +14,8 @@
 // hash tables and other data structures with a large number
 // of small objects
 
+#include	<cstring>
+
 namespace NLP {
 
   // wraps a large chunk of memory which is determined
@@ -99,7 +101,7 @@ namespace NLP {
           _unused.pop_back();
         }else
           _current = new MemoryArena(_MINSIZE);
-         buf = _current->alloc(size);
+        buf = _current->alloc(size);
       }else{
         MemoryArena *tmp = new MemoryArena(size);
         buf = tmp->alloc(size);
@@ -152,7 +154,7 @@ namespace NLP {
       size_t nbytes = _current->size();
       for(MemoryArenas::const_iterator i = _used.begin(); i != _used.end(); ++i)
         nbytes += (*i)->size();
-      for(MemoryArenas::const_iterator i = _unused.begin(); i != _used.end(); ++i)
+      for(MemoryArenas::const_iterator i = _unused.begin(); i != _unused.end(); ++i)
         nbytes += (*i)->size();
       return nbytes;
     }

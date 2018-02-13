@@ -17,7 +17,7 @@
 // of Tag objects
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     class TagDict {
     private:

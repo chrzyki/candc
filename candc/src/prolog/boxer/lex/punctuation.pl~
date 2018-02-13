@@ -1,0 +1,75 @@
+
+
+semlex(t:ynq\s:dcl,'?',_,_,Sem):- !,
+   Sem = lam(S,app(S,lam(_,drs([],[])))).
+
+semlex(t:M\s:M,_,_,_,Sem):- !,
+   Sem = lam(S,app(S,lam(_,drs([],[])))).
+
+semlex(Cat,_,POS:_:_,Index,Sem):- 
+   option('--semantics',tuple),
+   punctuation(POS),
+   member(Cat,[s:X\s:X,s:X/s:X,np\np,np/np]), !,
+   Sem = lam(S,lam(F,app(S,lam(E,merge(drs([],[Index:pred(E,punctuation,a,42)]),app(F,E)))))).
+
+semlex(Cat,_,POS:_:_,Index,Sem):- 
+   option('--semantics',tuple),
+   punctuation(POS),
+   member(Cat,[n:X/n:X,n:X\n:X,pp/pp,pp\pp]), !,
+   Sem = lam(P,lam(Y,merge(drs([],[Index:pred(Y,punctuation,a,42)]),app(P,Y)))).
+
+semlex(Cat,_,POS:_:_,Index,Sem):- 
+   option('--semantics',tuple),
+   punctuation(POS),   
+   category(vpadv,Cat,_), !,
+   Sem = lam(X,lam(Q,lam(F,app(app(X,Q),lam(E,merge(drs([],[Index:pred(E,punctuation,a,42)]),app(F,E))))))).
+
+semlex(Cat,_,POS:_:_,Index,Sem):- 
+   option('--semantics',tuple),
+   punctuation(POS),   
+   member(Cat,[np\np, np/np]), !,
+   Sem = lam(Q,lam(P,app(Q,lam(X,merge(drs([],[Index:pred(X,punctuation,a,42)]),
+                                       app(P,X)))))).
+
+semlex(Cat,_,POS:_:_,Index,Sem):- 
+   option('--semantics',tuple),
+   punctuation(POS),   
+   member(Cat,[((s:X\np)/(s:X\np))/((s:X\np)/(s:X\np)),
+               ((s:X\np)/(s:X\np))\((s:X\np)/(s:X\np)),
+               ((s:X\np)\(s:X\np))\((s:X\np)\(s:X\np)),  
+               ((s:X\np)\(s:X\np))/((s:X\np)\(s:X\np))]), !,
+   Sem = lam(AV,lam(VP,lam(NP,lam(F,app(app(app(AV,VP),NP),lam(E,merge(drs([],[Index:pred(E,punctuation,a,42)]),app(F,E)))))))).
+
+semlex(Cat,_,POS:_:_,Index,Sem):- 
+   option('--semantics',tuple),
+   punctuation(POS),   
+   member(Cat,[(s:X/s:X)/(s:X/s:X),
+               (s:X/s:X)\(s:X/s:X),
+               (s:X\s:X)/(s:X\s:X),
+               (s:X\s:X)\(s:X\s:X)]), !, 
+   Sem = lam(M,lam(S,lam(F,app(app(M,S),lam(E,merge(drs([],[Index:pred(E,punctuation,a,42)]),app(F,E))))))).
+
+semlex(Cat,_,POS:_:_,Index,Sem):- 
+   option('--semantics',tuple),
+   punctuation(POS),   
+   member(Cat,[(np\np)/(np\np),
+               (np\np)\(np\np),
+               (np/np)/(np/np)]), !, 
+   Sem = lam(M,lam(Q,lam(P,app(app(M,Q),lam(X,merge(drs([],[Index:pred(X,punctuation,a,42)]),
+                                                    app(P,X))))))).
+
+%semlex(Cat,_,POS:_:_,_,_Sem):- 
+%   option('--semantics',tuple),
+%   \+ member(Cat,[conj:app,comma,semi]),
+%   punctuation(POS), 
+%   write(cat:Cat), tab(5), write(pos:POS), nl, fail.
+
+semlex(C\C,_,POS:_:_,_,Sem):- 
+   punctuation(POS), !,
+   Sem = lam(X,X).
+
+semlex(C/C,_,POS:_:_,_,Sem):- 
+   punctuation(POS), !,
+   Sem = lam(X,X).
+
+

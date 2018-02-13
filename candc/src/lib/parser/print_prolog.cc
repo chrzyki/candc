@@ -58,7 +58,7 @@ PrologPrinter::header(const std::string &PREFACE){
 }
 
 void
-PrologPrinter::unary(Sentence &sent){
+PrologPrinter::unary(Sentence &){
   out.stream << "ccg(" << nsentences << ',';
   if(FORMAT & FMT_WS)
     out.stream << '\n';

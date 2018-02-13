@@ -17,5 +17,5 @@ const char *PROGRAM_NAME = "pos";
 
 int
 run(int argc, char **argv){
-  return run_tag<Tagger::POS>(false, 5, 0.0, "%w \n", "%w|%p \n", argc, argv);
+  return run_tag<Taggers::POS>(false, 5, 0.0, "%w \n", "%w|%p \n", argc, argv);
 }

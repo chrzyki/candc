@@ -2,6 +2,13 @@
 
 import sys
 
+if __name__ == '__main__':
+  if len(sys.argv) < 4:
+    print "Usage: evalmulti <gold> <model> <test>"
+    print """To convert output from bin/super to the test format, this might help:
+cat super_out | sed 's/$/\\n/' | tr ' |' '\\n ' | sed 's/^\([^ ]* [^ ]* \)/\\1n-a /' > super_out.multi"""
+    sys.exit(1)
+
 GOLD = sys.argv[1]
 MODEL = sys.argv[2]
 TEST = sys.argv[3]
@@ -119,13 +126,15 @@ gsent = read_gold()
 while gsent:
   tsent = read_test()
   if len(gsent) != len(tsent):
-    raise 'sentences not the same length'
+    print gsent
+    print tsent
+    raise Exception('sentences not the same length - gold %d, test %d' % (len(gsent), len(tsent)))
 
   seen_pos_error = False
   seen_ccg_error = False
   for ((gword, gpos, gcat), (tword, tpos, tcats)) in zip(gsent, tsent):
     if gword != tword:
-      raise 'words do not line up'
+      raise Exception('words do not line up')
 
     if gpos != tpos:
       error = (gpos, tpos)

@@ -12,7 +12,7 @@
 // extracts features from chunktagged training data
 // saves the extracted model into the specified model directory
 // which is then loaded by NLP::MaxEnt::GIS for estimating
-// the parameters of the model, and NLP::Tagger::Chunk for tagging
+// the parameters of the model, and NLP::Taggers::Chunk for tagging
 
 #include "extract/_baseimpl.h"
 #include "extract/tagger.h"
@@ -28,6 +28,8 @@ namespace NLP { namespace Extract {
 // private implementation, which is shared
 class Chunk::_Impl: public _TaggerImpl {
 protected:
+  void reg_types(void);
+
   template <class TC>
   void _add_surrounding(TC &tc, const Sentence &sent, ulong i);
   template <class TC>
@@ -43,15 +45,35 @@ protected:
   void _generate_contexts(const Sentence &sent);
   void _make_unknowns(void) const;
 
-  void _pass1(NLP::IO::Reader &reader);
+  void _pass1(NLP::IO::Reader &reader, bool save_klasses=true);
 public:
-  NLP::Tagger::Chunk::Config &cfg;
+  NLP::Taggers::Chunk::Config &cfg;
 
   Lexicon poscounts;	// POS tags and frequency counts
 
-  _Impl(NLP::Tagger::Chunk::Config &cfg, const std::string &PREFACE, bool VERBOSE);
+  _Impl(NLP::Taggers::Chunk::Config &cfg, const std::string &PREFACE, bool VERBOSE);
   ~_Impl(void);
 };
+
+void
+Chunk::_Impl::reg_types(void){
+  _TaggerImpl::reg_types();
+
+  registry.reg(Types::ppt);
+  registry.reg(Types::pt);
+  registry.reg(Types::t);
+  registry.reg(Types::nt);
+  registry.reg(Types::nnt);
+
+  registry.reg(Types::ppt_pt_b);
+  registry.reg(Types::pt_t_b);
+  registry.reg(Types::pt_nt_b);
+  registry.reg(Types::t_nt_b);
+  registry.reg(Types::nt_nnt_b);
+
+  registry.reg(Types::pst);
+  registry.reg(Types::ppst);
+}
 
 // count surrounding word features (2 words to left and right)
 // count surrounding POS tag features (2 tags to left and right)
@@ -103,36 +125,36 @@ void
 Chunk::_Impl::_add_surrounding2(TC &tc, const Sentence &sent, ulong i){
   size_t last = sent.pos.size() - 1;
   if(i > 0){
-    attributes(tc, Types::ptt, sent.pos[i - 1], sent.pos[i]);
+    attributes(tc, Types::pt_t_b, sent.pos[i - 1], sent.pos[i]);
     if(i > 1)
-      attributes(tc, Types::pptptb, sent.pos[i - 2], sent.pos[i - 1]);
+      attributes(tc, Types::ppt_pt_b, sent.pos[i - 2], sent.pos[i - 1]);
     else
-      attributes(tc, Types::pptptb, SENTINEL, sent.pos[i - 1]);
+      attributes(tc, Types::ppt_pt_b, SENTINEL, sent.pos[i - 1]);
 
     if(i < last)
-      attributes(tc, Types::ptntb, sent.pos[i - 1], sent.pos[i + 1]);
+      attributes(tc, Types::pt_nt_b, sent.pos[i - 1], sent.pos[i + 1]);
     else
-      attributes(tc, Types::ptntb, sent.pos[i - 1], SENTINEL);
+      attributes(tc, Types::pt_nt_b, sent.pos[i - 1], SENTINEL);
   }else{
-    attributes(tc, Types::pttb, SENTINEL, sent.pos[i]);
-    attributes(tc, Types::pptptb, SENTINEL2);
+    attributes(tc, Types::pt_t_b, SENTINEL, sent.pos[i]);
+    attributes(tc, Types::ppt_pt_b, SENTINEL2);
 
     if(i < last)
-      attributes(tc, Types::ptntb, SENTINEL, sent.pos[i + 1]);
+      attributes(tc, Types::pt_nt_b, SENTINEL, sent.pos[i + 1]);
     else
-      attributes(tc, Types::ptntb, SENTINEL2);
+      attributes(tc, Types::pt_nt_b, SENTINEL2);
   }
 
   if(i < last){
-    attributes(tc, Types::tntb, sent.pos[i], sent.pos[i + 1]);
+    attributes(tc, Types::t_nt_b, sent.pos[i], sent.pos[i + 1]);
     --last;
     if(i < last)
-      attributes(tc, Types::ntnntb, sent.pos[i + 1], sent.pos[i + 2]);
+      attributes(tc, Types::nt_nnt_b, sent.pos[i + 1], sent.pos[i + 2]);
     else
-      attributes(tc, Types::ntnntb, sent.pos[i + 1], SENTINEL);
+      attributes(tc, Types::nt_nnt_b, sent.pos[i + 1], SENTINEL);
   }else{
-    attributes(tc, Types::tntb, sent.pos[i], SENTINEL);
-    attributes(tc, Types::ntnntb, SENTINEL2);
+    attributes(tc, Types::t_nt_b, sent.pos[i], SENTINEL);
+    attributes(tc, Types::nt_nnt_b, SENTINEL2);
   }
 }
 
@@ -230,20 +252,20 @@ Chunk::_Impl::_make_unknowns(void) const {
 }
 
 void
-Chunk::_Impl::_pass1(NLP::IO::Reader &reader){
-  _TaggerImpl::_pass1(reader);
+Chunk::_Impl::_pass1(NLP::IO::Reader &reader, bool save_klasses){
+  _TaggerImpl::_pass1(reader, save_klasses);
 
   // POS tags are sorted alphabetically and dumped
   poscounts.sort_by_alpha();
   poscounts.save(cfg.postags(), PREFACE);
 }
 
-Chunk::_Impl::_Impl(NLP::Tagger::Chunk::Config &cfg, const std::string &PREFACE, bool VERBOSE)
+Chunk::_Impl::_Impl(NLP::Taggers::Chunk::Config &cfg, const std::string &PREFACE, bool VERBOSE)
   : _TaggerImpl(cfg, PREFACE, VERBOSE), cfg(cfg), poscounts("poscount"){}
 
 Chunk::_Impl::~_Impl(void) {}
 
-Chunk::Chunk(NLP::Tagger::Chunk::Config &cfg, const std::string &PREFACE, bool VERBOSE)
+Chunk::Chunk(NLP::Taggers::Chunk::Config &cfg, const std::string &PREFACE, bool VERBOSE)
   : _impl(new _Impl(cfg, PREFACE, VERBOSE)){}
 
 Chunk::Chunk(const Chunk &other): _impl(share(other._impl)){}
@@ -252,11 +274,11 @@ Chunk::~Chunk(void){
   release(_impl);
 }
 
-ulong Chunk::nevents(void) const { return _impl->nevents; };
-ulong Chunk::ncontexts(void) const { return _impl->ncontexts; };
+ulong Chunk::nevents(void) const { return _impl->nevents; }
+ulong Chunk::ncontexts(void) const { return _impl->ncontexts; }
 
-TagSet Chunk::tagset(void) const { return _impl->klasses; };
-Lexicon Chunk::lexicon(void) const { return _impl->lexicon; };
+TagSet Chunk::tagset(void) const { return _impl->klasses; }
+Lexicon Chunk::lexicon(void) const { return _impl->lexicon; }
 
 void Chunk::extract(NLP::IO::Reader &reader){ _impl->extract(reader, true); }
 

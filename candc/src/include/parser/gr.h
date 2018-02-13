@@ -23,6 +23,7 @@ namespace NLP {
       int pos;
 
       Argument(void): pos(-1){}
+      Argument(Raw raw, int pos): raw(raw), pos(pos){}
     };
 
     typedef std::vector<Argument> Arguments;

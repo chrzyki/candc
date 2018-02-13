@@ -34,7 +34,7 @@ namespace NLP {
 	: MAXWORDS(MAXWORDS), nsentences(0), cats(cats),
 	  TBchart(cats, EXTRA_RULES, MAXWORDS),
 	  chart(cats, EXTRA_RULES, MAXWORDS),
-	  rules(chart.pool, cats.markedup, EXTRA_RULES){}
+	  rules(chart.pool, cats.markedup, EXTRA_RULES, true){}
       ~Generator(void){}
 
       void convertTBsent(const TBSentence &TBsentence, Sentence &sent) const {

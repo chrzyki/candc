@@ -8,15 +8,7 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-#include <cassert>
-#include <cmath>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <iostream>
-#include <algorithm>
-#include <sstream>
-#include <limits>
+#include "std.h"
 
 using namespace std;
 
@@ -27,8 +19,6 @@ using namespace std;
 #include "tree/feature.h"
 #include "tree/node.h"
 #include "tree/forest.h"
-
-#include "cluster.h"
 
 namespace NLP { namespace Tree {
 

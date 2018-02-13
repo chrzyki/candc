@@ -45,6 +45,6 @@ MPIXX = mpicxx
 
 LEX = flex
 
-PROLOG = pl
+PROLOG = swipl
 
 include Makefile.targets

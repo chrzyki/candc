@@ -100,6 +100,6 @@ namespace NLP {
     ulong value(void) const { return _hash; };
   };
 
-  inline bool operator ==(const Hash &a, const Hash &b){ return a.value() == b.value(); };
-  inline bool operator !=(const Hash &a, const Hash &b){ return a.value() != b.value(); };
+  inline bool operator ==(const Hash &a, const Hash &b){ return a.value() == b.value(); }
+  inline bool operator !=(const Hash &a, const Hash &b){ return a.value() != b.value(); }
 }

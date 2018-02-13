@@ -23,7 +23,7 @@ namespace NLP {
     Exception(const std::string &msg)
       : msg(msg){}
     Exception(const Exception &other)
-      : msg(other.msg){}
+      : std::exception(other), msg(other.msg){}
 
     virtual ~Exception(void) throw(){}
 

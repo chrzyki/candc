@@ -45,10 +45,11 @@ class TNode(Node):
       return self.left.sentence()
 
   def count_rules(self, rules):    
+    if self.left:
+      self.left.count_rules(rules)
     if self.right:
       key = "%s %s" % (self.left.paren(), self.right.paren())
       rules[key] = rules.get(key, 0) + 1
-      self.left.count_rules(rules)
       self.right.count_rules(rules)
 
 class LNode(Node):

@@ -44,6 +44,7 @@ namespace NLP {
 		  ulong slot, const std::string &fmt);
 
       void set_constraints(const Categories &cats);
+      void set_cats(const Categories &cats);
 
       const Relation &rel(RelID id) const;
       const Relation &rel_checked(RelID id) const;

@@ -45,6 +45,7 @@ public:
   }
   virtual ~Impl_(void){}
 
+  using ImplBase::insert;
   void insert(const string &word, ulong freq){
     ImplBase::insert(word)->value = freq;
   }

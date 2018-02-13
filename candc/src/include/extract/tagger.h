@@ -16,15 +16,16 @@ class _TaggerImpl: public _BaseImpl {
 protected:
   virtual void _apply_cutoffs(void);
 
-  virtual void _pass1(NLP::IO::Reader &reader);
+  virtual void _pass1(NLP::IO::Reader &reader, bool save_klasses = true);
 public:
-  NLP::Tagger::Tagger::Config &cfg;
+  NLP::Taggers::Tagger::Config &cfg;
 
   const std::string SENTINEL;
   const std::string SENTINEL2;
+  const std::string SENTINEL3;
   NLP::Lexicon tagdict;
 
-  _TaggerImpl(NLP::Tagger::Tagger::Config &cfg, const std::string &PREFACE, bool VERBOSE);
+  _TaggerImpl(NLP::Taggers::Tagger::Config &cfg, const std::string &PREFACE, bool VERBOSE);
   virtual ~_TaggerImpl(void);
 
   virtual void extract(NLP::IO::Reader &reader, bool MKDIR);

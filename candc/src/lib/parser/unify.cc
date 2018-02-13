@@ -60,7 +60,7 @@ Unify::_unify(const Cat *c1, const Cat *c2){
 
     if(c1->flags != c2->flags)
       return false;
-    if(c1->res->uhash != c2->res->uhash || 
+    if(c1->res->uhash != c2->res->uhash ||
        c1->arg->uhash != c2->arg->uhash)
       return false;
 
@@ -69,6 +69,12 @@ Unify::_unify(const Cat *c1, const Cat *c2){
   }
 
   heads[c1->var][c2->var] = 1;
+  if(max1 < c1->var)
+    max1 = c1->var;
+
+  if(max2 < c2->var)
+    max2 = c2->var;
+
   // assumes that we don't have the case
   // ((S\NP{X*})/NP{X+})
   lrange1[c1->var] |= c1->lrange;
@@ -83,8 +89,8 @@ Unify::_matrix2trans(void){
   memset(trans2, 0, sizeof(trans2));
   memset(old1, 0, sizeof(old1));
   memset(old2, 0, sizeof(old2));
-  for(ulong i = 0; i < Vars::NVARS; ++i)
-    for(ulong j = 0; j < Vars::NVARS; ++j)
+  for(uchar i = 1; i <= max1; ++i)
+    for(uchar j = 1; j <= max2; ++j)
       if(heads[i][j]){
         trans1[i] = nvariables;
         trans2[j] = nvariables;
@@ -92,8 +98,7 @@ Unify::_matrix2trans(void){
         old2[nvariables] = j;
         ++nvariables;
         if(nvariables > Vars::NVARS)
-          NLP::Exception("too many variables created in unification");
-          
+          throw NLP::Exception("too many variables created in unification");
       }
 }
 
@@ -101,7 +106,7 @@ void
 Unify::add_var(VarID var, VarID trans[], VarID old[]){
   if(var && !trans[var]){
     if(nvariables >= Vars::NVARS)
-      NLP::Exception("too many variables added from result category");
+      throw NLP::Exception("too many variables added from result category");
 
     trans[var] = nvariables;
     old[nvariables] = var;
@@ -155,6 +160,6 @@ Unify::reorder(const SuperCat *sc1, const SuperCat *sc2){
     old1[seen[i]] = tmp1[i];
     old2[seen[i]] = tmp2[i];
   }
-};
+}
 
 } }

@@ -33,5 +33,7 @@
 #include "parser/categories.h"
 #include "parser/supercat.h"
 
+#include "parser/statistics.h"
+
 #include "parser/printer.h"
 #include "parser/print_stream.h"

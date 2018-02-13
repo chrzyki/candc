@@ -73,9 +73,13 @@ namespace NLP {
 	out.stream << '\n';
       }
 
-      virtual void stats(const double LOGDERIVS, const ulong NEQUIV, const ulong NTOTAL){
-	Printer::stats(LOGDERIVS, NEQUIV, NTOTAL);
-	log.stream << nsentences << " stats " << logderivs << ' ' << nequiv << ' ' << ntotal << std::endl;
+      virtual void stats(const Statistics &stats){
+	Printer::stats(stats);
+	log.stream << nsentences << " stats " << stats.logderivs << ' ' << stats.nequiv
+		   << ' ' << stats.ntotal
+		   << " comb " << stats.ncombines << ' ' << stats.ncombines_zeros
+		   << ' ' << stats.ncombines_rejected
+		   << ' ' << stats.ncombines_reduced << std::endl;
       }
 
       virtual void attempted(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF){

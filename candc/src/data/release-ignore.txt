@@ -21,3 +21,9 @@ src/tests/depbank560
 
 # don't include the old CCG regression tests because of the big data files
 src/tests/ccg
+
+# don't include the VPE annotation (not stable yet) -- JB
+src/data/vpe
+
+# don't include the Italian CCGbank (not stable yet) -- JB
+src/data/italian

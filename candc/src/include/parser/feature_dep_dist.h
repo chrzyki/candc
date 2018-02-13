@@ -14,7 +14,6 @@ namespace NLP {
 
     class DepDistFeature: public DistFeatureType {
     private:
-      Categories &cats;
       Lexicon lexicon;
       DependencyAttributes dep_attrs;
       
@@ -24,9 +23,7 @@ namespace NLP {
 		    const Words &heads, const Words &tags) const;
 
     public:
-
-      DepDistFeature(Categories &cats, const Lexicon &lexicon):
-	cats(cats), lexicon(lexicon){}
+      DepDistFeature(const Lexicon &lexicon) : lexicon(lexicon) { }
       virtual ~DepDistFeature(void){ /* do nothing */ }
       
       void load(std::istream &in, const std::string &filename, ulong id, Type type);

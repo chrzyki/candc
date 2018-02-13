@@ -40,7 +40,7 @@ RuleDepDistFeature::load(istream &in, const std::string &filename, ulong id, Typ
 }
 
 ulong
-RuleDepDistFeature::get_id(std::istream &in, const std::string &filename, Type type,
+RuleDepDistFeature::get_id(std::istream &in, const std::string &, Type type,
 			   vector<long> &) const{
   string cat1str, cat2str, cat3str, head;
   ushort count;
@@ -110,7 +110,7 @@ RuleDepDistFeature::_add(const SuperCat *scl, const SuperCat *scr, const SuperCa
 
 void
 RuleDepDistFeature::add(const SuperCat *sc, const Words &words, const Words &tags,
-			Type type, std::vector<ulong> &ids) const {
+			Type, std::vector<ulong> &ids) const {
   _add(sc->left, sc->right, sc, DIST_ADJ_HEAD, words, tags, ids);
   _add(sc->left, sc->right, sc, DIST_VERBS_HEAD, words, tags, ids);
   _add(sc->left, sc->right, sc, DIST_PUNCT_HEAD, words, tags, ids);
@@ -180,8 +180,7 @@ RuleDepDistFeature::_score(const SuperCat *scl, const SuperCat *scr, const Super
 }
 
 double
-RuleDepDistFeature::score(const SuperCat *sc, const Words &words, const Words &tags,
-			  Type type) const {
+RuleDepDistFeature::score(const SuperCat *sc, const Words &words, const Words &tags, Type) const {
   double score = 0.0;
 
   score += _score(sc->left, sc->right, sc, DIST_ADJ_HEAD, words, tags);

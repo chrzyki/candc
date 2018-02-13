@@ -43,22 +43,53 @@ namespace NLP {
       const static Type w;
       const static Type pw;
       const static Type ppw;
+      const static Type pppw;
       const static Type nw;
       const static Type nnw;
+      const static Type nnnw;
 
+      // word bigram types
+      const static Type pppw_ppw_b;
+      const static Type ppw_pw_b;
+      const static Type pw_w_b;
+      const static Type pw_nw_b;
+      const static Type w_nw_b;
+      const static Type nw_nnw_b;
+      const static Type nnw_nnnw_b;
+
+      // word trigram types
+      const static Type pppw_ppw_pw_c;
+      const static Type ppw_pw_w_c;
+      const static Type pw_w_nw_c;
+      const static Type w_nw_nnw_c;
+      const static Type nw_nnw_nnnw_c;
+      
       // tag types
       const static Type t;
       const static Type pt;
       const static Type ppt;
+      const static Type pppt;
       const static Type nt;
       const static Type nnt;
+      const static Type nnnt;
 
       // tag bigram types
-      const static Type pptptb;
-      const static Type pttb;
-      const static Type ptntb;
-      const static Type tntb;
-      const static Type ntnntb;
+      const static Type pppt_ppt_b;
+      const static Type ppt_pt_b;
+      const static Type pt_t_b;
+      const static Type pt_nt_b;
+      const static Type t_nt_b;
+      const static Type nt_nnt_b;
+      const static Type nnt_nnnt_b;
+      const static Type nnnt_nnnnt_b;
+
+      // tag trigram types
+      const static Type pppt_ppt_pt_c;
+      const static Type ppt_pt_t_c;
+      const static Type pt_t_nt_c;
+      const static Type t_nt_nnt_c;
+      const static Type nt_nnt_nnnt_c;
+      const static Type nnt_nnnt_nnnnt_c;
 
       // chunk types
       const static Type c;

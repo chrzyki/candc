@@ -12,7 +12,7 @@
 // extracts features from POS tagged training data
 // saves the extracted model into the specified model directory
 // which is then loaded by NLP::MaxEnt::GIS for estimating
-// the parameters of the model, and NLP::Tagger::POS for tagging
+// the parameters of the model, and NLP::Taggers::POS for tagging
 
 #include "extract/_baseimpl.h"
 #include "extract/tagger.h"
@@ -27,6 +27,8 @@ namespace NLP { namespace Extract {
 // private implementation, which is shared
 class POS::_Impl: public _TaggerImpl {
 protected:
+  void reg_types(void);
+  
   template <class TC>
   void _add_prefixes(TC &tc, const Sentence &sent, ulong i);
   template <class TC>
@@ -46,12 +48,29 @@ protected:
   void _generate_contexts(const NLP::Sentence &sent);
   void _make_unknowns(void) const;
 public:
-  NLP::Tagger::POS::Config &cfg;
+  NLP::Taggers::POS::Config &cfg;
 
-  _Impl(NLP::Tagger::POS::Config &cfg, const std::string &PREFACE, bool VERBOSE);
+  _Impl(NLP::Taggers::POS::Config &cfg, const std::string &PREFACE, bool VERBOSE);
   virtual ~_Impl(void);
 };
 
+void
+POS::_Impl::reg_types(void){
+  _TaggerImpl::reg_types();
+
+  // tag types
+  registry.reg(Types::pt);
+  registry.reg(Types::ppt);
+
+  // prefix and suffix types
+  registry.reg(Types::suff);
+  registry.reg(Types::pref);
+
+  // orthographic types
+  registry.reg(Types::has_digit);
+  registry.reg(Types::has_hyphen);
+  registry.reg(Types::has_uppercase);
+}
 // count 1--4 character prefix features
 template <class TC>
 void
@@ -230,6 +249,9 @@ POS::_Impl::_generate_contexts(const NLP::Sentence &sent){
 
 void
 POS::_Impl::_make_unknowns(void) const {
+  if(Cluster::rank != 0)
+    return;
+  
   ofstream stream(cfg.unknowns().c_str());
   if(!stream)
     throw NLP::IOException("could not open unknowns file for writing", cfg.unknowns());
@@ -255,13 +277,13 @@ POS::_Impl::_make_unknowns(void) const {
   stream << "CD\nJJ\nNNP\n";
 }
 
-POS::_Impl::_Impl(NLP::Tagger::POS::Config &cfg,
+POS::_Impl::_Impl(NLP::Taggers::POS::Config &cfg,
 		  const std::string &PREFACE, bool VERBOSE)
   : _TaggerImpl(cfg, PREFACE, VERBOSE), cfg(cfg){}
 
 POS::_Impl::~_Impl(void){}
 
-POS::POS(NLP::Tagger::POS::Config &cfg, const std::string &PREFACE, bool VERBOSE):
+POS::POS(NLP::Taggers::POS::Config &cfg, const std::string &PREFACE, bool VERBOSE):
   _impl(new _Impl(cfg, PREFACE, VERBOSE)){}
 
 POS::POS(const POS &other): _impl(share(other._impl)){}
@@ -270,11 +292,11 @@ POS::~POS(void){
   release(_impl);
 }
 
-ulong POS::nevents(void) const { return _impl->nevents; };
-ulong POS::ncontexts(void) const { return _impl->ncontexts; };
+ulong POS::nevents(void) const { return _impl->nevents; }
+ulong POS::ncontexts(void) const { return _impl->ncontexts; }
 
-TagSet POS::tagset(void) const { return _impl->klasses; };
-Lexicon POS::lexicon(void) const { return _impl->lexicon; };
+TagSet POS::tagset(void) const { return _impl->klasses; }
+Lexicon POS::lexicon(void) const { return _impl->lexicon; }
 
 void POS::extract(NLP::Reader &reader){ _impl->extract(reader, true); }
 

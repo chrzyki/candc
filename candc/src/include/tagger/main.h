@@ -56,7 +56,7 @@ run_tag(const bool MULTI, ulong DICT_CUTOFF, double BETA,
   Config::Restricted<std::string> algorithm(cfg, SPACE, "algorithm",
 					    MULTI ? "the decoding algorithm to use [noseq, greedy, fwdbwd]"
 					    : "the decoding algorithm to use [viterbi]",
-					    &Tagger::check_alg,
+					    &Taggers::check_alg,
 					    MULTI ? "fwdbwd" : "viterbi");
 
   Config::Op<ulong> dict_cutoff(cfg, SPACE, "dict_cutoff", "the frequency at which the tag dictionary is used", DICT_CUTOFF);
@@ -95,9 +95,9 @@ run_tag(const bool MULTI, ulong DICT_CUTOFF, double BETA,
   }
 
   if(MULTI)
-    tagger.mtag(reader, writer, Tagger::str2alg(algorithm()), dict_cutoff(), (*beta)());
+    tagger.mtag(reader, writer, Taggers::str2alg(algorithm()), dict_cutoff(), (*beta)());
   else
-    tagger.tag(reader, writer, Tagger::str2alg(algorithm()), dict_cutoff());
+    tagger.tag(reader, writer, Taggers::str2alg(algorithm()), dict_cutoff());
 
   return 0;
 }

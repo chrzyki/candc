@@ -12,7 +12,7 @@
 // extracts features from named entity tagged training data
 // saves the extracted model into the specified model directory
 // which is then loaded by NLP::MaxEnt::GIS for estimating
-// the parameters of the model, and NLP::Tagger::NER for tagging
+// the parameters of the model, and NLP::Taggers::NER for tagging
 
 #include "extract/_baseimpl.h"
 #include "extract/tagger.h"
@@ -36,6 +36,8 @@ const static char *const lengths[] = { "0", "1", "2", "3", "4", "5", "6", "7",
 // private implementation, which is shared
 class NER::_Impl: public _TaggerImpl {
 protected:
+  void reg_types(void);
+
   template <class TC>
   void _add_surrounding_words(TC &tc, const Sentence &sent, ulong i);
   template <class TC>
@@ -73,24 +75,108 @@ protected:
   void _generate_contexts(const Sentence &sent);
   void _make_unknowns(void) const;
 
-  void _pass1(NLP::IO::Reader &reader);
+  void _pass1(NLP::IO::Reader &reader, bool save_klasses=true);
   void _pass2(NLP::IO::Reader &reader);
+  void _pass2_postload(NLP::IO::Reader &reader);
   void _pass3(NLP::IO::Reader &reader);
 public:
-  NLP::Tagger::NER::Config &cfg;
+  NLP::Taggers::NER::Config &cfg;
   const Types types;
 
-  NLP::Tagger::TagHist last_klass;
-  NLP::Tagger::Unigram unigrams;
+  NLP::Taggers::TagHist last_klass;
+  NLP::Taggers::Unigram unigrams;
   NLP::Gazetteers gaz;
 
   Lexicon poscounts;
   Lexicon chunkcounts;
 
-  _Impl(NLP::Tagger::NER::Config &cfg, const std::string &PREFACE, bool VERBOSE);
+  _Impl(NLP::Taggers::NER::Config &cfg, const std::string &PREFACE, bool VERBOSE);
   virtual ~_Impl(void);
 };
 
+void
+NER::_Impl::reg_types(void){
+  _TaggerImpl::reg_types();
+
+  // tag types
+  registry.reg(Types::t);
+  registry.reg(Types::pt);
+  registry.reg(Types::ppt);
+  registry.reg(Types::nt);
+  registry.reg(Types::nnt);
+
+  // chunk types
+  registry.reg(Types::c);
+  registry.reg(Types::pc);
+  registry.reg(Types::ppc);
+  registry.reg(Types::nc);
+  registry.reg(Types::nnc);
+
+  // NE types
+  registry.reg(Types::pne);
+  registry.reg(Types::ppne);
+
+  // prefix and suffix types
+  registry.reg(Types::suff);
+  registry.reg(Types::pref);
+
+  // orthographic types
+  registry.reg(Types::has_digit);
+  registry.reg(Types::has_hyphen);
+  registry.reg(Types::has_period);
+  registry.reg(Types::has_punct);
+  registry.reg(Types::has_uppercase);
+
+  registry.reg(Types::alphanum);
+  registry.reg(Types::number);
+  registry.reg(Types::roman);
+  registry.reg(Types::initial);
+  registry.reg(Types::acronym);
+
+  registry.reg(Types::kase);
+  registry.reg(Types::digits);
+  registry.reg(Types::length);
+
+  // gazetteer types
+  registry.reg(Types::gaz_common);
+  registry.reg(Types::gaz_first);
+  registry.reg(Types::gaz_last);
+  
+  registry.reg(Types::pgaz_common);
+  registry.reg(Types::pgaz_first);
+  registry.reg(Types::pgaz_last);
+
+  registry.reg(Types::ngaz_common);
+  registry.reg(Types::ngaz_first);
+  registry.reg(Types::ngaz_last);
+
+  // gazetteer and sentence position types
+  registry.reg(Types::xcommon_bs);
+  registry.reg(Types::xcommon_ms);
+
+  // wordtype types
+  registry.reg(Types::wt);   // sc (12/04/05) changed from a
+  registry.reg(Types::pwt);  // was pa
+  registry.reg(Types::ppwt); // was ppa 
+  registry.reg(Types::nwt);  // was na
+  registry.reg(Types::nnwt); // was nna
+
+  // bigram wordtype types
+  registry.reg(Types::ppbt);   // was ppapa sc: how do these correspond?
+  registry.reg(Types::pbt);    // was paa
+  registry.reg(Types::bt);     // was pana
+  registry.reg(Types::nbt);    // was ana
+  registry.reg(Types::nnbt);   // was nanna
+
+  // trigram wordtype types
+  registry.reg(Types::ptt);  // was pppappapa
+  registry.reg(Types::ntt);  // was nannannna
+
+  // miscellaneous special types
+  registry.reg(Types::last);
+  registry.reg(Types::nu);
+  registry.reg(Types::nnu);
+}
 // count 1--4 character prefix features
 template <class TC>
 void
@@ -592,8 +678,8 @@ NER::_Impl::_make_unknowns(void) const {
 }
 
 void
-NER::_Impl::_pass1(NLP::IO::Reader &reader){
-  _TaggerImpl::_pass1(reader);
+NER::_Impl::_pass1(NLP::IO::Reader &reader, bool save_klasses){
+  _TaggerImpl::_pass1(reader, save_klasses);
 
   // POS tags are sorted alphabetically and dumped
   poscounts.sort_by_alpha();
@@ -608,11 +694,17 @@ NER::_Impl::_pass1(NLP::IO::Reader &reader){
 // dump out to model/features and model/attributes
 void
 NER::_Impl::_pass2(NLP::IO::Reader &reader){
-  // load the counts from pass1 back into klasses and unigrams
-  unigrams.load(cfg.tagdict());
   last_klass.clear();
   _TaggerImpl::_pass2(reader);
 }
+
+void
+NER::_Impl::_pass2_postload(NLP::IO::Reader &reader) {
+  // load the counts from pass1 back into klasses and unigrams
+  unigrams.load(cfg.tagdict());
+  _TaggerImpl::_pass2_postload(reader);
+}
+
 
 // extract features, translate them to attribute IDs for context vectors
 // dump context vectors to model/contexts and compress to merge duplicates
@@ -622,7 +714,7 @@ NER::_Impl::_pass3(NLP::IO::Reader &reader){
   _TaggerImpl::_pass3(reader);
 }
 
-NER::_Impl::_Impl(NLP::Tagger::NER::Config &cfg, const std::string &PREFACE, bool VERBOSE)
+NER::_Impl::_Impl(NLP::Taggers::NER::Config &cfg, const std::string &PREFACE, bool VERBOSE)
   : _TaggerImpl(cfg, PREFACE, VERBOSE), cfg(cfg), types(cfg.types),
     last_klass("last_klass"), unigrams("unigrams", klasses, lexicon),
     gaz("gazetteers", cfg.path(), cfg.gazetteers()),
@@ -630,7 +722,7 @@ NER::_Impl::_Impl(NLP::Tagger::NER::Config &cfg, const std::string &PREFACE, boo
 
 NER::_Impl::~_Impl(void) {}
 
-NER::NER(NLP::Tagger::NER::Config &cfg, const std::string &PREFACE, bool VERBOSE)
+NER::NER(NLP::Taggers::NER::Config &cfg, const std::string &PREFACE, bool VERBOSE)
   : _impl(new _Impl(cfg, PREFACE, VERBOSE)){}
 
 NER::NER(const NER &other): _impl(share(other._impl)){}
@@ -639,11 +731,11 @@ NER::~NER(void){
   release(_impl);
 }
 
-ulong NER::nevents(void) const { return _impl->nevents; };
-ulong NER::ncontexts(void) const { return _impl->ncontexts; };
+ulong NER::nevents(void) const { return _impl->nevents; }
+ulong NER::ncontexts(void) const { return _impl->ncontexts; }
 
-TagSet NER::tagset(void) const { return _impl->klasses; };
-Lexicon NER::lexicon(void) const { return _impl->lexicon; };
+TagSet NER::tagset(void) const { return _impl->klasses; }
+Lexicon NER::lexicon(void) const { return _impl->lexicon; }
 
 void NER::extract(NLP::IO::Reader &reader){ _impl->extract(reader, true); }
 

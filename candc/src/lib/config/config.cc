@@ -10,6 +10,8 @@
 
 #include "base.h"
 
+#include "cluster.h"
+
 #include "config/config.h"
 
 using namespace std;
@@ -36,7 +38,7 @@ typedef std::map<std::string, int> RecursiveCheck;
 template <class Cfg>
 void
 load_config(Cfg &cfg, RecursiveCheck &recursive_check,
-	    std::istream &in, const std::string &uri){
+            std::istream &in, const std::string &uri){
 
   if(recursive_check.count(uri)){
     int pnlines = recursive_check[uri];
@@ -59,9 +61,13 @@ load_config(Cfg &cfg, RecursiveCheck &recursive_check,
     name = strip_whitespace(name);
     value_str = strip_whitespace(strip_quotes(value_str));
 
+    if (cfg.ignore_additional() && !cfg.has(name))
+      continue;
+
     try {
       cfg.get(name).set(value_str);
-    }catch(ConfigError e){
+    }
+    catch(ConfigError e) {
       // add the configuration file information to this exception
       throw ConfigError(e.msg, e.option, uri, nlines);
     }
@@ -72,6 +78,14 @@ load_config(Cfg &cfg, RecursiveCheck &recursive_check,
 
 std::string
 Cfg::derived_path(const OpPath &base, const std::string &filename) const {
+  return base() + Port::DIR_SEP + filename;
+}
+
+std::string
+Cfg::derived_temp_path(const OpPath &base, const OpPath &temp,
+                       const std::string &filename) const {
+  if(Cluster::USE_MPI)
+    return temp() + Port::DIR_SEP + filename + '.' + Cluster::rank_str;
   return base() + Port::DIR_SEP + filename;
 }
 
@@ -105,7 +119,7 @@ Cfg::has(const std::string &path) const {
 
     for(Nodes::const_iterator i = children.begin(); i != children.end(); ++i){
       if(*i && (*i)->match(path, tail))
-	return tail == "" || (*i)->has(tail);
+        return tail == "" || (*i)->has(tail);
     }
 
     return false;
@@ -123,9 +137,9 @@ Cfg::get(const std::string &path){
 
     for(Nodes::const_iterator i = children.begin(); i != children.end(); ++i)
       if(*i && (*i)->match(path, tail)){
-	if(tail != "")
-	  return (*i)->get(tail);
-	return **i;
+        if(tail != "")
+          return (*i)->get(tail);
+        return **i;
       }
 
     if(ignore_missing())
@@ -148,7 +162,7 @@ Cfg::check(void){
   try {
     for(Nodes::iterator i = children.begin(); i != children.end(); ++i)
       if(*i)
-	(*i)->check();
+        (*i)->check();
   }catch(ConfigError e){
     if(NAME == "")
       throw;
@@ -248,7 +262,7 @@ Main::check(void){
     if(e.uri != ""){
       cerr << ':' << e.uri;
       if(e.line)
-	cerr << ':' << e.line;
+        cerr << ':' << e.line;
     }
     cerr << Port::OFF << "\n\n";
     _option_help.usage(1, false);
@@ -262,7 +276,7 @@ Main::parse(const int argc, char * const *argv){
       NLP::Config::die("unrecognised command line option", argv[i]);
 
     std::string arg = argv[i];
-    
+
     std::string path;
     std::string value_str = "true";
     bool assigned_arg = split_assignment(arg, path, value_str);
@@ -271,16 +285,16 @@ Main::parse(const int argc, char * const *argv){
       NLP::Config::die("short options not implemented yet", path);
     else
       path = path.substr(1 + (path[1] == SEP));
-  
+
     Node &node = get(path);
     bool force_arg = node.needs_arg() && !assigned_arg;
 
     if(i + 1 == argc){
       if(force_arg)
-	NLP::Config::die("command line option requires an argument", arg);
+        NLP::Config::die("command line option requires an argument", arg);
     }else{
       if(!valid_option(argv[i + 1]) || force_arg)
-	value_str = argv[++i];
+        value_str = argv[++i];
     }
 
     node.set(value_str);
@@ -288,7 +302,7 @@ Main::parse(const int argc, char * const *argv){
 }
 
 Directory::Directory(const std::string &name, const std::string &desc,
-		     const OpPath *base, Flags flags)
+                     const OpPath *base, Flags flags)
   : Cfg(name, desc, flags),
     loaded_(false),
     path(name, "the " + name + " model(s) directory", base){
@@ -297,7 +311,7 @@ Directory::Directory(const std::string &name, const std::string &desc,
 }
 
 Directory::Directory(Cfg &cfg, const std::string &name, const std::string &desc,
-		     const OpPath *base, Flags flags)
+                     const OpPath *base, Flags flags)
   : Cfg(cfg, name, desc, flags),
     loaded_(false),
     path(name, "the " + name + " model(s) directory", base){

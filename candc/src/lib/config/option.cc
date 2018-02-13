@@ -10,6 +10,8 @@
 
 #include "base.h"
 
+#include "cluster.h"
+
 #include "config/config.h"
 
 #include "licence.h"
@@ -35,7 +37,7 @@ Option::check(void){
 }
 
 void
-Option::write_config(std::ostream &out, std::string prefix, bool root) const {
+Option::write_config(std::ostream &out, std::string prefix, bool) const {
   out << prefix << NAME;
 }
 
@@ -115,7 +117,7 @@ OpVersion::set(const std::string &){
 }
 
 void
-OpVersion::write_config(std::ostream &out, std::string prefix, bool root) const {
+OpVersion::write_config(std::ostream &out, std::string prefix, bool) const {
   out << prefix << NAME << " = " << VERSION << ' ' << BUILD << '\n';
 }
 
@@ -134,12 +136,12 @@ OpHelp::usage(int exitcode, bool full) const {
 }
 
 void
-OpHelp::set(const std::string &s){
+OpHelp::set(const std::string &){
   usage(0, false);
 }
 
 void
-OpMoreHelp::set(const std::string &s){
+OpMoreHelp::set(const std::string &){
   usage(0, true);
 }
 
@@ -157,7 +159,7 @@ OpCfg::set(const std::string &value_str){
 std::string
 OpPath::get_value(void) const {
   if(BASE && value[0] == Port::DIR_SEP && value[1] == Port::DIR_SEP)
-    return (*BASE)() + Port::DIR_SEP + value.substr(2);
+		return (*BASE)() + Port::DIR_SEP + value.substr(2);
   else
     return value;
 }

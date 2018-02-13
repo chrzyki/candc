@@ -54,9 +54,43 @@ Chart::Chart(Categories &cats, bool EXTRA_RULES, ulong MAXWORDS)
     SbNPbSbNPbSbNPbSbNP(cats.markedup["((S\\NP)\\(S\\NP))\\((S\\NP)\\(S\\NP))"]),
     NPfNPbNP(cats.markedup["NP/(NP\\NP)"]){}
 
+void
+Chart::set_constraint(const Constraint &c){
+	int pos = c.pos;
+	int span = c.span;
+	cell(pos, span).set(c);
+
+	if(c.exclude)
+		return;
+
+	int p = pos - 1;
+	int start = 2;
+	int height = span - 1;
+	while(p >= 0){
+		for(int s = 0; s < height; ++s)
+			cell(p, start + s).exclude = true;
+		--p;
+		++start;
+	}
+
+	p = pos + 1;
+	start = span;
+	height = nwords - pos - span;
+	while(p < pos + span){
+		for(int s = 0; s < height; ++s)
+			cell(p, start + s).exclude = true;
+		++p;
+		--start;
+	}
+}
+
 bool
-Chart::load(const Sentence &sent, double BETA, bool lexTR, bool qu_parsing){
-  reset();
+Chart::load(const Sentence &sent, double BETA, bool repair,
+	    bool lexTR, bool qu_parsing){
+  if(repair)
+    mark();
+  else
+    reset();
 
   nwords = sent.words.size();
   if(nwords > MAXWORDS)
@@ -64,19 +98,23 @@ Chart::load(const Sentence &sent, double BETA, bool lexTR, bool qu_parsing){
 
   ncells = (nwords + 1)*nwords/2 + 1;
 
+	for(Constraints::const_iterator i = sent.constraints.begin();
+			i != sent.constraints.end(); ++i)
+		set_constraint(**i);
+
   for(ulong i = 0; i < nwords; ++i){
     const MultiRaw &multi = sent.msuper[i];
     double prob_cutoff = multi[0].score*BETA;
 
     for(MultiRaw::const_iterator j = multi.begin(); j != multi.end(); ++j){
       if(j->score < prob_cutoff)
-	continue;
+        continue;
 
       const Cat *cat = cats.markedup[j->raw];
       if(!cat)
-	throw NLP::ParseError("attempted to load category without markedup " + j->raw);
+        throw NLP::ParseError("attempted to load category without markedup " + j->raw);
 
-      add(i, 1, SuperCat::Lexical(pool, i+1, cat, 0));
+      create(pool, i, cat);
     }
     if(lexTR){
       lex(i, 1, qu_parsing);
@@ -189,7 +227,8 @@ void
 Chart::tr(Position pos, Position span){
   tmp.clear();
   Cell &current = cell(pos, span);
-  for(ulong i = 0; i < current.size(); ++i){
+
+  for(ulong i = current.nold; i != current.size(); ++i){
     SuperCat *sc = current[i];
     const Cat *cat = sc->cat;
 
@@ -231,7 +270,7 @@ void
 Chart::lex(Position pos, Position span, bool qu_parsing){
   tmp.clear();
   Cell &current = cell(pos, span);
-  for(Cell::iterator i = current.begin(); i != current.end(); ++i){
+  for(Cell::iterator i = current.old(); i != current.end(); ++i){
     SuperCat *sc = *i;
     const Cat *cat = sc->cat;
 
@@ -243,43 +282,43 @@ Chart::lex(Position pos, Position span, bool qu_parsing){
       RuleID ruleid = 0;
       switch(cat->res->feature){
         case Features::DCL:
-	  if(!EXTRA_RULES)
-	    continue;
-	  ruleid = 12;
-	  break;
+          if(!EXTRA_RULES)
+            continue;
+          ruleid = 12;
+          break;
         case Features::PSS:
-	  if(EXTRA_RULES){
-	    _add_lex(pos, span, SbNPbSbNP, sc, false, 17);
-	    _add_lex(pos, span, SfS, sc, false, 13);
-	  }
-	  if(qu_parsing)
-	    _add_lex(pos, span, NbN, sc, true, 95);
-	  ruleid = 2;
-	  break;
+          if(EXTRA_RULES){
+            _add_lex(pos, span, SbNPbSbNP, sc, false, 17);
+            _add_lex(pos, span, SfS, sc, false, 13);
+          }
+          if(qu_parsing)
+            _add_lex(pos, span, NbN, sc, true, 95);
+          ruleid = 2;
+          break;
         case Features::NG:
           _add_lex(pos, span, SbNPbSbNP, sc, false, 4);
           _add_lex(pos, span, SfS, sc, false, 5);
-	  if(EXTRA_RULES){
-	    _add_lex(pos, span, SbNPfSbNP, sc, false, 18);
-	    _add_lex(pos, span, SbS, sc, false, 16);
-	    _add_lex(pos, span, NP, sc, false, 20);
-	  }
+          if(EXTRA_RULES){
+            _add_lex(pos, span, SbNPfSbNP, sc, false, 18);
+            _add_lex(pos, span, SbS, sc, false, 16);
+            _add_lex(pos, span, NP, sc, false, 20);
+          }
           ruleid = 3;
           break;
         case Features::ADJ:
-	  // given this a 93 id to match the gen_lex rule
-	  _add_lex(pos, span, SbNPbSbNP, sc, false, 93);
-	  if(EXTRA_RULES)
-	    _add_lex(pos, span, SfS, sc, false, 15);
-	  if(qu_parsing)
-	    _add_lex(pos, span, NbN, sc, true, 94);
-	  ruleid = 6;
-	  break;	  
+          // given this a 93 id to match the gen_lex rule
+          _add_lex(pos, span, SbNPbSbNP, sc, false, 93);
+          if(EXTRA_RULES)
+            _add_lex(pos, span, SfS, sc, false, 15);
+          if(qu_parsing)
+            _add_lex(pos, span, NbN, sc, true, 94);
+          ruleid = 6;
+          break;          
         case Features::TO:
           _add_lex(pos, span, SbNPbSbNP, sc, false, 8);
           _add_lex(pos, span, NbN, sc, true, 9);
-	  if(EXTRA_RULES)
-	    _add_lex(pos, span, SfS, sc, false, 14);
+          if(EXTRA_RULES)
+            _add_lex(pos, span, SfS, sc, false, 14);
           ruleid = 7;
           break;
         default:
@@ -316,62 +355,62 @@ Chart::genlex(SuperCat *TBsc, SuperCat *TBscRes, Cell &cell){
     switch(TBcat->res->feature){
       case Features::DCL:
         ruleid = 12;
-	break;
+        break;
       case Features::PSS:
         if(TBres->is_SbNPbSbNP())
-	  return _add_genlex(cell, SbNPbSbNP, sc, false, 17);
+          return _add_genlex(cell, SbNPbSbNP, sc, false, 17);
 
-	if(TBres->is_SfS())
-	  return _add_genlex(cell, SfS, sc, false, 13);
+        if(TBres->is_SfS())
+          return _add_genlex(cell, SfS, sc, false, 13);
 
-	ruleid = 2;
-	break;
+        ruleid = 2;
+        break;
       case Features::NG:
-	if(TBres->is_SbNPfSbNP())
-	  return _add_genlex(cell, SbNPfSbNP, sc, false, 18);
-	if(TBres->is_SbNPbSbNP())
+        if(TBres->is_SbNPfSbNP())
+          return _add_genlex(cell, SbNPfSbNP, sc, false, 18);
+        if(TBres->is_SbNPbSbNP())
           return _add_genlex(cell, SbNPbSbNP, sc, false, 4);
-	if(TBres->is_SfS())
+        if(TBres->is_SfS())
           return _add_genlex(cell, SfS, sc, false, 5);
-	if(TBres->is_SbS())
-	  return _add_genlex(cell, SbS, sc, false, 16);
-	if(TBres->is_NP())
-	  return _add_genlex(cell, NP, sc, false, 20);
+        if(TBres->is_SbS())
+          return _add_genlex(cell, SbS, sc, false, 16);
+        if(TBres->is_NP())
+          return _add_genlex(cell, NP, sc, false, 20);
 
         ruleid = 3;
         break;
       case Features::ADJ:
-	if(TBres->is_SbNPbSbNP())
-	  return _add_genlex(cell, SbNPbSbNP, sc, false, 93);
-	if(TBres->is_SfS())
-	  return _add_genlex(cell, SfS, sc, false, 15);
+        if(TBres->is_SbNPbSbNP())
+          return _add_genlex(cell, SbNPbSbNP, sc, false, 93);
+        if(TBres->is_SfS())
+          return _add_genlex(cell, SfS, sc, false, 15);
 
-	ruleid = 6;
-	break;	  
+        ruleid = 6;
+        break;          
       case Features::TO:
-	if(TBres->is_SbNPbSbNP())
+        if(TBres->is_SbNPbSbNP())
           return _add_genlex(cell, SbNPbSbNP, sc, false, 8);
-	if(TBres->is_NbN())
+        if(TBres->is_NbN())
           return _add_genlex(cell, NbN, sc, true, 9);
-	if(TBres->is_SfS())
-	  return _add_genlex(cell, SfS, sc, false, 14);
-	ruleid = 7;
-	break;
+        if(TBres->is_SfS())
+          return _add_genlex(cell, SfS, sc, false, 14);
+        ruleid = 7;
+        break;
       default:
-	ruleid = 90;
+        ruleid = 90;
         break;
     }
 
     if(TBres->is_NPbNP())
       return _add_genlex(cell, NPbNP, sc, true, ruleid);
   }else if(TBcat->is_SfNP() && TBcat->res->has_dcl() &&
-	   cat->is_SfNP() && cat->res->has_dcl()){
+           cat->is_SfNP() && cat->res->has_dcl()){
     if(TBres->is_NPbNP())
       return _add_genlex(cell, NPbNP, sc, true, 10);
-  }else if(TBcat->is_StobNPfNP() && cat->is_StobNPfNP())
+  }else if(TBcat->is_StobNPfNP() && cat->is_StobNPfNP()){
     if(TBres->is_NPbNP())
       return _add_genlex(cell, NPbNP, sc, true, 19);
-  else if(TBcat->is_Sdcl() && cat->is_Sdcl()){
+  }else if(TBcat->is_Sdcl() && cat->is_Sdcl()){
     if(TBres->is_NPbNP())
       return _add_genlex(cell, NPbNP, sc, false, 21);
     if(TBres->is_SbS())
@@ -408,5 +447,18 @@ Chart::genlex(SuperCat *TBsc, SuperCat *TBscRes, Cell &cell){
   return false;
 }
 
+void
+Chart::dump(ostream &out) const {
+  for(ulong span = 1; span <= nwords; ++span)
+    for(ulong pos = 0; pos <= nwords - span; ++pos){
+      const Cell &c = cell(pos, span);
+      out << "CELL " << span << ',' << pos << ' ' << c.size() << endl;
+      for(Cell::const_iterator i = c.begin(); i != c.end(); ++i){
+	const SuperCat *equiv = *i;
+	out << "  " << span << ',' << pos << ' '  << *equiv->cat;
+	out << ' ' << equiv->nequiv() << endl;
+      }
+    } 
+}
 
 } }

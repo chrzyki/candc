@@ -13,6 +13,9 @@
 namespace NLP {
   namespace Model {
 
+    class Attribute;
+    class Attributes;
+    
     // class for registering Attributes objects and mapping their
     // text representation (in the model/attributes file) to the
     // correct Attributes object
@@ -40,8 +43,12 @@ namespace NLP {
       // for each type of contextual predicate
       void reg(const Type &type, Attributes &attribs);
 
+      void reg(const Type &type);
+      
       // get back a registered Attributes object with a given id
       Attributes &get(const std::string &id);
+      
+      const char *canonize(const std::string &id) const;
 
       // ask a registered Attributes object with a given
       // attributes id to load an Attribute from the given stream 

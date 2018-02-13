@@ -20,7 +20,7 @@ void
 Node::write_help(const std::string &filename, const std::string &PREFACE, bool full) const {
   ofstream out(filename.c_str());
   if(!out)
-    throw NLP::IOException("could not open " + NAME + " file for writing", filename);
+    throw NLP::IOException("could not open " + NAME + " file for writing help", filename);
 
   out << PREFACE << '\n';
   write_help(out, "", full);
@@ -30,7 +30,7 @@ void
 Node::write_config(const std::string &filename, const std::string &PREFACE, bool root) const {
   ofstream out(filename.c_str());
   if(!out)
-    throw NLP::IOException("could not open " + NAME + " file for writing", filename);
+    throw NLP::IOException("could not open " + NAME + " file for writing config", filename);
 
   out << PREFACE << '\n';
   write_config(out, "", root);
@@ -40,7 +40,7 @@ void
 Node::write_preface(const std::string &filename, const std::string &PREFACE, bool root) const {
   ofstream out(filename.c_str());
   if(!out)
-    throw NLP::IOException("could not open " + NAME + " file for writing", filename);
+    throw NLP::IOException("could not open " + NAME + " file for writing preface", filename);
 
   out << PREFACE << '\n';
   write_preface(out, "", root);

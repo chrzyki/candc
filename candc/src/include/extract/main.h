@@ -12,6 +12,8 @@
 
 #include "base.h"
 
+#include "cluster.h"
+
 #include "prob.h"
 
 #include "config/config.h"
@@ -33,6 +35,7 @@
 #include "maxent/context.h"
 #include "maxent/gis.h"
 #include "maxent/bfgs.h"
+#include "maxent/perceptron.h"
 
 #include "timer.h"
 
@@ -61,6 +64,8 @@ run_train(const char *IFMT, int argc, char **argv){
   Config::Alias niter_alias(cfg, tagger_cfg.model.niterations, "niterations", tagger_cfg.NAME + "-model-niterations");
   Config::Alias sigma_alias(cfg, tagger_cfg.model.sigma, "sigma", tagger_cfg.NAME + "-model-sigma");
 
+  Config::Op<bool> extract_only(cfg, SPACE, "extract_only", "perform the extraction phase only", false);
+
   cfg.reg(tagger_cfg, SPACE);
 
   cfg.parse(argc, argv);
@@ -73,17 +78,22 @@ run_train(const char *IFMT, int argc, char **argv){
   EXTRACTOR extractor(tagger_cfg, PREFACE.str(), verbose());
   extractor.extract(reader);
 
-  MaxEnt::GIS *solver = 0;
-  if(tagger_cfg.model.solver() == "gis")
-    solver = new MaxEnt::GIS(tagger_cfg.model, verbose());
-  else if(tagger_cfg.model.solver() == "bfgs")
-    solver = new MaxEnt::BFGS(tagger_cfg.model, verbose());
-  else
-    assert(!"unknown MaxEnt solver should have been caught!");
+  if (!extract_only()) {
+    NLP::Cluster::init(argc, argv, false);
+    MaxEnt::GIS *solver = 0;
+    if(tagger_cfg.model.solver() == "gis")
+      solver = new MaxEnt::GIS(tagger_cfg.model, verbose());
+    else if(tagger_cfg.model.solver() == "bfgs")
+      solver = new MaxEnt::BFGS(tagger_cfg.model, verbose());
+    else if(tagger_cfg.model.solver() == "perceptron")
+      solver = new MaxEnt::Perceptron(tagger_cfg.model, verbose());
+    else
+      assert(!"unknown MaxEnt solver should have been caught!");
 
-  solver->init();
-  solver->iterate();
-  solver->save(PREFACE.str());
+    solver->init();
+    solver->iterate();
+    solver->save(PREFACE.str());
+  }
 
   return 0;
 }

@@ -25,7 +25,7 @@ namespace NLP {
 
   using namespace HashTable;
 
-  namespace Tagger {
+  namespace Taggers {
 
 // this will be a reasonably small hash table
 // notice it might include words we haven't seen

@@ -22,7 +22,8 @@
 namespace NLP {
   namespace Model {
 
-    struct Attribute {
+    class Attribute {
+    public:
       const Feature *begin;
       const Feature *end;
 

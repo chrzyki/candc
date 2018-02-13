@@ -12,18 +12,18 @@
 // full lattice. Keeps all sequences allowed by the tag dictionaries
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
     
     class FNode {
     public:
       FNode *prev;         // node of previous tag
-      NLP::Tag id;	   // current tag
-      NLP::Tag pid;	   // cached id of previous tag
+      NLP::Tag id;           // current tag
+      NLP::Tag pid;           // cached id of previous tag
       double forward;
       double backward;
 
       void *operator new(size_t size, NodePool<FNode> *pool) { return pool->alloc(size); }
-      void operator delete(void *, NodePool<FNode> *pool) { /* do nothing */ }
+      void operator delete(void *, NodePool<FNode> *) { /* do nothing */ }
       
       FNode(FNode *prev, NLP::Tag id, NLP::Tag pid, double forward, double backward):
         prev(prev), id(id), pid(pid), forward(forward), backward(backward) {};
@@ -46,41 +46,41 @@ namespace NLP {
       FNode start;
       
       Flattice(const ulong MAXWORDS, const ulong nklasses)
-	: pool(new NodePool<FNode>()),
-	  start(0, NLP::SENTINEL, NLP::SENTINEL, 1.0, 0.0){
+        : pool(new NodePool<FNode>()),
+          start(0, NLP::SENTINEL, NLP::SENTINEL, 1.0, 0.0){
 
-	lattice.reserve(MAXWORDS + 1);
-	lattice.push_back(FNodes(1, &start));
+        lattice.reserve(MAXWORDS + 1);
+        lattice.push_back(FNodes(1, &start));
 
-	for(ulong i = 0; i < MAXWORDS; ++i){
-	  FNodes nodes;
-	  nodes.reserve(nklasses);
-	  lattice.push_back(nodes);
-	}
+        for(ulong i = 0; i < MAXWORDS; ++i){
+          FNodes nodes;
+          nodes.reserve(nklasses);
+          lattice.push_back(nodes);
+        }
 
-	permitted.reserve(MAXWORDS);
-	permitted.push_back(1);
-	permitted.push_back(1);
+        permitted.reserve(MAXWORDS);
+        permitted.push_back(1);
+        permitted.push_back(1);
       }
 
       ~Flattice(void){
-	delete pool;
+        delete pool;
       }
 
       FNode *create(FNode *prev, NLP::Tag pid, NLP::Tag id, double forward, double backward){
-	return new (pool) FNode(prev, pid, id, forward, backward);
+        return new (pool) FNode(prev, pid, id, forward, backward);
       };
 
       void free(FNode *node){ pool->free(node); };
 
       void reset(void){  // don't clear start node
-	pool->clear();
+        pool->clear();
 
-	for(Lattice::iterator i = lattice.begin(); i != lattice.end_buffer(); ++i)
-	  i->resize(0);
+        for(Lattice::iterator i = lattice.begin(); i != lattice.end_buffer(); ++i)
+          i->resize(0);
 
-	permitted.resize(0);
-	PDFs.resize(0);
+        permitted.resize(0);
+        PDFs.resize(0);
       }
 
       FNodes &operator[](ulong i){ return lattice[i]; }

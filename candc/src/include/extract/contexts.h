@@ -24,7 +24,7 @@ namespace NLP {
     public:
       const std::string &PREFACE;
 
-      Contexts(void);
+      Contexts(bool MERGE, bool SORT);
       Contexts(const Contexts &other);
       Contexts &operator=(const Contexts &other);
 

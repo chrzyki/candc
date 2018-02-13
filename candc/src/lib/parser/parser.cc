@@ -27,7 +27,8 @@ Parser::Config::Config(const OpPath *base, const std::string &name, const std::s
     alt_markedup(*this, SPACE, "alt_markedup", "use the alternative markedup categories (marked with !)", false),
     seen_rules(*this, "seen_rules", "only accept category combinations seen in the training data", true),
     extra_rules(*this, "extra_rules", "use additional punctuation and unary type-changing rules", true),
-    question_rules(*this, "question_rules", "activate the unary rules that only apply to questions", false),
+    question_rules(*this, "question_rules", "use the unary rules that only apply to questions", false),
+    noisy_rules(*this, "noisy_rules", "use noisy non-CCG rules used in CCGbank", true),
     eisner_nf(*this, "eisner_nf", "only accept composition when the Eisner (1996) constraints are met", true),
     partial_gold(*this, SPACE, "partial_gold", "used for generating feature forests for training", false),
     beam(*this, "beam_ratio", "(not fully tested)", 0.0){}
@@ -204,12 +205,12 @@ Parser::_Impl::_Impl(const Config &cfg, Sentence &sent, Categories &cats, ulong 
     rule_head_feats(cats, lexicon),
     rule_dep_feats(cats, lexicon),
     rule_dep_dist_feats(cats, lexicon),
-    dep_feats(cats, lexicon),
-    dep_dist_feats(cats, lexicon),
+    dep_feats(lexicon),
+    dep_dist_feats(lexicon),
     genrule_feats(cats),
     weights(0),
     chart(cats, cfg.extra_rules(), cfg.maxwords()),
-    rules(chart.pool, cats.markedup, cfg.extra_rules()){
+    rules(chart.pool, cats.markedup, cfg.extra_rules(), cfg.noisy_rules()){
 
   if(load >= LOAD_FEATURES){
     _load_features(cfg.features());
@@ -237,25 +238,48 @@ Parser::_Impl::_Impl(const Config &cfg, Sentence &sent, Categories &cats, ulong 
 
 void
 Parser::_Impl::combine(Cell &left, Cell &right, long pos, long span){
+  ++stats.ncombines;
+  
+  if(left.empty() || right.empty()){
+    ++stats.ncombines_zeros;
+    return;
+  }
+
+  if(!left.updated() && !right.updated()){
+    ++stats.ncombines_rejected;
+    return;
+  }
+
+	if(left.exclude || right.exclude)
+		return;
+
   results.resize(0);
+  bool part_skip = false;
   for(Cell::iterator i = left.begin(); i != left.end(); ++i)
-    for(Cell::iterator j = right.begin(); j != right.end(); ++j)
+    for(Cell::iterator j = right.begin(); j != right.end(); ++j){
+      if(i < left.old() && j < right.old()){
+				part_skip = true;
+				continue;
+      }
       if(!cfg.seen_rules() || rule_instances((*i)->cat, (*j)->cat))
       	rules(*i, *j, cfg.eisner_nf(), cfg.seen_rules(), cfg.question_rules(), results);
+    }
 
   chart.add(pos, span, results);
+  stats.ncombines_reduced += part_skip;
 }
 
 bool
-Parser::_Impl::parse(const double BETA){
+Parser::_Impl::parse(const double BETA, bool repair){
   try {
     nsentences++;
-    SuperCat::nsupercats = 0;
-
+    if(!repair)
+      SuperCat::nsupercats = 0;
+  
     if(sent.words.size() > cfg.maxwords())
       throw NLP::ParseError("sentence length exceeds maximum number of words for parser", nsentences);
 
-    chart.load(sent, BETA, true, cfg.question_rules());
+    chart.load(sent, BETA, repair, true, cfg.question_rules());
 
     Words words;
     raws2words(sent.words, words);
@@ -270,7 +294,7 @@ Parser::_Impl::parse(const double BETA){
     // but still need to calculate beam scores to be used at higher levels
     if(cfg.beam() > 0.0)
       for(long i = 0; i < NWORDS; ++i)
-	calc_beam_scores(chart(i,1), words, tags);
+				calc_beam_scores(chart(i,1), words, tags);
 
     for(long j = 2; j <= NWORDS; ++j){
       for(long i = j - 2; i >= 0; --i){
@@ -398,7 +422,7 @@ Parser::_Impl::calc_scores(void){
 }
 
 ulong
-Parser::_Impl::dependency_marker(const Filled *filled, const Variable *vars) const {
+Parser::_Impl::dependency_marker(const Filled *filled) const {
   Hash h(filled->head);
   h += filled->filler;
   h += filled->rel;
@@ -412,74 +436,6 @@ Parser::_Impl::raws2words(const vector<std::string> &raw, Words &words) const {
   words.reserve(sent.words.size());
   for(vector<std::string>::const_iterator i = raw.begin(); i != raw.end(); ++i)
     words.push_back(lexicon[*i]);
-}
-
-//print_data() function is obsolete
-bool
-Parser::_Impl::print_data(ostream &out, ulong id){
-  Cell &root = chart.root();
-  if(root.size() == 0)
-    return 0;
-
-  const long NWORDS = sent.words.size();
-
-  // check for S[dcl] and mark active nodes
-  bool Sdcl = false;
-  ulong ndisj = 0;
-  for(Cell::iterator i = root.begin(); i != root.end(); ++i)
-    if((*i)->cat->is_Sdcl()){
-      Sdcl = true;
-      (*i)->mark_active_disj(ndisj);
-    }
-
-  if(!Sdcl)
-    return 0;
-  
-  // print sentence and all lexical categories
-  for(long i = 0; i < NWORDS; ++i){
-    if(i > 0)
-      out << ' ';
-    out << sent.words[i] << '|' << sent.pos[i];
-  }
-  out << '\n';
-
-  for(long i = 0; i < NWORDS; ++i){
-    Cell &cell = chart(i, 1);
-    ulong c = 0;
-    for(Cell::iterator j = cell.begin(); j != cell.end(); ++j)
-      if(!((*j)->left)){
-	if(c > 0)
-	  out << ' ';
-	(*j)->cat->out_novar_noX(out, false);
-	c++;
-      }
-    out << '\n';
-  }
-
-  // print unambiguous lexical categories
-  for(long i = 0; i < NWORDS; ++i){
-    Cell &cell = chart(i, 1);
-    ulong ncats = 0;
-    for(Cell::iterator j = cell.begin(); j != cell.end(); ++j)
-      if((*j)->marker == 1 && !((*j)->left))
-	ncats++;
-   
-    if(ncats <= 0)
-      throw NLP::IOException("number of lexical cats is zero");
-    else if(ncats == 1){
-      for(Cell::iterator j = cell.begin(); j != cell.end(); ++j)
-	// marker can now also take the value 2
-	if((*j)->marker == 1 && !((*j)->left)){
-	  out << i << ' ';
-	  (*j)->cat->out_novar_noX(out, false);
-	  out << '\n';
-	  break;
-	}
-    }
-  }
-  out << '\n';
-
-  return 1;
 }
 
 const SuperCat *
@@ -503,9 +459,15 @@ Parser::_Impl::deps_count(ostream &out){
   return 1;
 }
 
-double
-Parser::_Impl::calc_stats(ulong &nequiv, ulong &ntotal){
-  return inside_outside.calc_stats(chart, nequiv, ntotal);
+void
+Parser::_Impl::calc_stats(Statistics &stats){
+  stats = this->stats;
+  stats.logderivs = inside_outside.calc_stats(chart, stats.nequiv, stats.ntotal);
+}
+
+void
+Parser::_Impl::reset(void){
+  stats.reset();
 }
 
 Parser::Parser(const Config &cfg, Sentence &sent, Categories &cats, ulong load){
@@ -514,7 +476,7 @@ Parser::Parser(const Config &cfg, Sentence &sent, Categories &cats, ulong load){
 
 Parser::~Parser(void){ delete _impl; }
 
-bool Parser::parse(double BETA){ return _impl->parse(BETA); }
+bool Parser::parse(double BETA, bool repair){ return _impl->parse(BETA, repair); }
 
 bool Parser::deps_count(ostream &out){ return _impl->deps_count(out); }
 
@@ -546,8 +508,21 @@ bool Parser::is_partial_gold(void) const {
   return _impl->cfg.partial_gold();
 }
 
-double Parser::calc_stats(ulong &nequiv, ulong &ntotal){
-  return _impl->calc_stats(nequiv, ntotal);
+void Parser::calc_stats(Statistics &stats){
+  _impl->calc_stats(stats);
 }
+
+void Parser::reset(void){
+  _impl->reset();
+}
+
+void
+Parser::dump_chart(ostream &out) const {
+  _impl->chart.dump(out);
+}
+
+Sentence &Parser::sentence(void){ return _impl->sent; }
+Chart &Parser::chart(void){ return _impl->chart; }
+Rules &Parser::rules(void){ return _impl->rules; }
 
 } }

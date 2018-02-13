@@ -25,6 +25,8 @@
 
 #include "parser/decoder.h"
 
+#include "parser/statistics.h"
+
 namespace NLP {
 
   using namespace Config;
@@ -32,9 +34,12 @@ namespace NLP {
   namespace CCG {
 
     class InsideOutside;
+    class Chart;
+    class Rules;
 
     class Parser {
     public:
+
       class Config: public Directory {
       public:
 	OpPath cats;
@@ -52,6 +57,7 @@ namespace NLP {
 	Op<bool> seen_rules;
 	Op<bool> extra_rules;
 	Op<bool> question_rules;
+	Op<bool> noisy_rules;
 	Op<bool> eisner_nf;
 	Op<bool> partial_gold;
 	Op<double> beam;
@@ -68,7 +74,8 @@ namespace NLP {
 	     Categories &cats, ulong load = LOAD_WEIGHTS);
       ~Parser(void);
 
-      bool parse(double BETA);
+      bool parse(double BETA, bool repair);
+      void reset(void);
 
       bool deps_count(std::ostream &out);
       bool count_rules(void);
@@ -82,7 +89,13 @@ namespace NLP {
 
       bool calc_scores(void);
       const SuperCat *best(Decoder &decoder);
-      double calc_stats(ulong &nequiv, ulong &total);
+      void calc_stats(Statistics &stats);
+
+      void dump_chart(std::ostream &out) const;
+
+      Sentence &sentence(void);
+      Chart &chart(void);
+      Rules &rules(void);
     private:
       class _Impl;
       _Impl *_impl;

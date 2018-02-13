@@ -34,14 +34,15 @@ namespace NLP {
       Cfg(const std::string &name, const std::string &desc, Flags flags = SHOW_ALL, ushort order = 0);
       Cfg(Cfg &cfg, const std::string &name, const std::string &desc, Flags flags = SHOW_ALL, ushort order = 0);
       virtual ~Cfg(void){ /* do nothing */ }
-      
+
       std::string derived_path(const OpPath &base, const std::string &filename) const;
+      std::string derived_temp_path(const OpPath &base, const OpPath &temp, const std::string &filename) const;
 
       virtual void reg(Node &child, Flags flags = 0);
 
       virtual bool has(const std::string &name) const;
       virtual Node &get(const std::string &name);
-      virtual void set(const std::string &val){ die("cannot set the value of a Config"); }
+      virtual void set(const std::string &){ die("cannot set the value of a Config"); }
       virtual void check(void);
 
       virtual void load(std::istream &in, const std::string &uri);
@@ -61,14 +62,14 @@ namespace NLP {
       virtual void write_preface(std::ostream &out, std::string prefix = "", bool root = true) const;
 
       virtual void writeln_help(std::ostream &out, std::string prefix = "", bool full = false) const {
-	out << DESC << " options:\n";
-	write_help(out, prefix, full);
+        out << DESC << " options:\n";
+        write_help(out, prefix, full);
       }
       virtual void writeln_config(std::ostream &out, std::string prefix = "", bool root = true) const {
-	write_config(out, prefix, root);
+        write_config(out, prefix, root);
       }
       virtual void writeln_preface(std::ostream &out, std::string prefix = "", bool root = true) const {
-	write_preface(out, prefix, root);
+        write_preface(out, prefix, root);
       }
     };
 
@@ -80,14 +81,15 @@ namespace NLP {
       OpLicence _option_licence;
     public:
       Main(const std::string &name)
-	: Cfg("", "main program", SHOW_ALL),
-	  _option_version(*this), _option_licence(*this){
-	PROGRAM_NAME = name;
+        : Cfg("", "main program", SHOW_ALL),
+          _option_version(*this), _option_licence(*this){
+        PROGRAM_NAME = name;
       }
       virtual ~Main(void) { /* do nothing */ }
 
       virtual void check(void);
 
+      using Cfg::set;
       void set(const std::string &path, const std::string &value_str){ get(path).set(value_str); }
       void parse(const int argc, char * const *argv);
     };
@@ -101,9 +103,9 @@ namespace NLP {
       std::string config(void) const { return derived_path(path, "config"); }
 
       Directory(const std::string &name, const std::string &desc,
-		const OpPath *base = 0, Flags flags = SHOW_ALL);
+                const OpPath *base = 0, Flags flags = SHOW_ALL);
       Directory(Cfg &cfg, const std::string &name, const std::string &desc,
-		const OpPath *base = 0, Flags flags = SHOW_ALL);
+                const OpPath *base = 0, Flags flags = SHOW_ALL);
 
       virtual ~Directory(void){ /* do nothing */ }
 

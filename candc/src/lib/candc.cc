@@ -10,6 +10,13 @@
 
 #include "candc.h"
 
+#include "prob.h"
+#include "tagger/taghist.h"
+#include "tagger/nodepool.h"
+#include "tagger/lattice.h"
+#include "tagger/flattice.h"
+#include "tagger/state.h"
+
 using namespace std;
 
 namespace NLP {
@@ -28,7 +35,7 @@ CandC::Config::Config(const OpPath *base,
     verbose(*this, "verbose", "verbose output", false),
     comments(*this, "comments", "comment the output", false),
     morph(*this, "morph", "directory containing the morphological analyser info", "//verbstem.list", &path),
-    printer(*this, "printer", "parser printing style [deps, grs, prolog]", "grs"),
+    printer(*this, "printer", "parser printing style [deps, grs, prolog, boxer, ccgbank, xml, debug, js]", "grs"),
     decoder(*this, "decoder", "parser decoder [deps, derivs, random]", "derivs"),
     compact(*this, SPACE, "compact", "use compact output representation if it exists", false),
     maxwords(*this, SPACE, "maxwords", "maximum sentence length the parser will accept", 250),
@@ -71,7 +78,10 @@ CandC::CandC(Config &cfg, const std::string &PREFACE)
     ner(cfg.ner),
     // load integrated supertagger and parser
     integration(cfg.integration, cfg.super, cfg.parser, sent),
-    decoder(cfg.decoder()){
+    decoder(cfg.decoder()),
+    pos_state(pos.create_state()),
+    chunk_state(chunk.create_state()),
+    ner_state(ner.create_state()){
   morph_initialise(cfg.morph().c_str());
 }
 
@@ -100,9 +110,31 @@ ptb_bracket(std::string &s){
   }
 }
 
+void
+split_token(std::string token, std::string &word, std::string &pos, std::string &super){
+	word = "";
+	pos = "";
+	super = "";
+
+	int state = 0;
+	for(string::iterator i = token.begin(); i != token.end(); ++i){
+		if(*i == '|'){
+			++state;
+			continue;
+		}
+		switch(state){
+			case 0: word += *i; break;
+			case 1: pos += *i; break;
+			case 2: super += *i; break;
+			default: 
+				throw NLP::Exception("input token should only have 2 pipes -- word|pos|super");
+		}
+	}
+}
+
 bool
 CandC::load_sentence(std::ostream &log){
-  sent.words.resize(0);
+  sent.reset();
 
   std::istringstream in(buffer);
   std::string s;
@@ -138,6 +170,53 @@ CandC::load_sentence(std::ostream &log){
   }
 
   return true;
+}
+
+bool
+CandC::load_oracle(std::ostream &log){
+	sent.reset();
+
+	std::istringstream in(buffer);
+	std::string token, word, pos, super;
+	while(in >> token){
+		cout << "reading a token " << token << endl;
+
+		split_token(token, word, pos, super);
+		if(cfg.skip_quotes() && is_quote(word))
+			continue;
+		if(cfg.trans_brackets())
+			ptb_bracket(word);
+
+		sent.words.push_back(word);
+		sent.pos.push_back(pos);
+		sent.super.push_back(super);
+	}
+
+	if(sent.words.size() == 0){
+		if(cfg.verbose())
+			log << "ignoring blank on line " << nlines << endl;
+		return false;
+	}
+
+	nsents++;
+
+	if(sent.words.size() > cfg.maxwords()){
+		if(cfg.maxwords_policy() == "error")
+			throw NLP::Exception("sentence length exceeds maximum number of words");
+
+		if(cfg.maxwords_policy() == "ignore")
+			return false;
+
+		if(cfg.verbose() || cfg.maxwords_policy() == "warn")
+			log << "ignoring long sentence (length " << sent.words.size() << " words) on line "
+					<< nlines << endl;
+
+		return false;
+	}
+
+	sent.copy_multi('s', 'S');
+
+	return true;
 }
 
 const static ulong MAX_MORPHA_LEN = 32;
@@ -182,14 +261,19 @@ CandC::load_lemmas(void){
 }
 
 double
-CandC::parse(IO::Input &in, IO::Output &out, IO::Log &log, bool START){
+CandC::parse(IO::Input &in, IO::Output &out, IO::Log &log, bool START,
+             const std::string &override_printer){
   reset();
 
   StreamPrinter::Format FORMAT = StreamPrinter::FMT_ALL;
   if(cfg.compact())
     FORMAT &= ~StreamPrinter::FMT_WS;
 
-  PrinterFactory printer(cfg.printer(), out, log, integration.cats, FORMAT);
+  std::string printer_name = cfg.printer();
+  if(override_printer != "")
+    printer_name = override_printer;
+
+  PrinterFactory printer(printer_name, out, log, integration.cats, FORMAT);
 
   if(START){
     nlines = 0;
@@ -205,7 +289,7 @@ CandC::parse(IO::Input &in, IO::Output &out, IO::Log &log, bool START){
       // set the new meta tag and clear sentence ids
       set_meta();
       // reset the last tag feature of the NE recogniser
-      ner.begin_document();
+      ner.begin_document(ner_state);
       continue;
     }
 
@@ -214,21 +298,76 @@ CandC::parse(IO::Input &in, IO::Output &out, IO::Log &log, bool START){
 
     add_id(nsents);
 
-    pos.tag(sent, VITERBI, cfg.pos_dict_cutoff());
+    pos.tag(sent, VITERBI, cfg.pos_dict_cutoff(), pos_state);
     if(FORMAT & (StreamPrinter::FMT_CHUNK | StreamPrinter::FMT_NER))
-      chunk.tag(sent, VITERBI, cfg.chunk_dict_cutoff());
+      chunk.tag(sent, VITERBI, cfg.chunk_dict_cutoff(), chunk_state);
     if(FORMAT & StreamPrinter::FMT_NER)
-      ner.tag(sent, VITERBI, cfg.ner_dict_cutoff());
+      ner.tag(sent, VITERBI, cfg.ner_dict_cutoff(), ner_state);
 
     if(FORMAT & StreamPrinter::FMT_LEMMA)
       load_lemmas();
 
     integration.parse(sent, decoder, printer);
   }
+
   printer.footer();
   print_meta(out.stream, FORMAT);
 
   return nsents ? double(nparsed)/nsents : nsents;
+}
+
+double
+CandC::oracle(IO::Input &in, IO::Input &constraints, IO::Output &out, IO::Log &log,
+							bool START, const std::string &override_printer){
+	reset();
+	
+	StreamPrinter::Format FORMAT = StreamPrinter::FMT_DEV;
+	if(cfg.compact())
+		FORMAT &= ~StreamPrinter::FMT_WS;
+
+	std::string printer_name = cfg.printer();
+	if(override_printer != "")
+		printer_name = override_printer;
+
+	PrinterFactory printer(printer_name, out, log, integration.cats, FORMAT);
+
+	if(START){
+		nlines = 0;
+		nsents = 0;
+		nparsed = 0;
+		
+		printer.header(PREFACE);
+	}
+
+	while(read_buffer(in.stream)){
+		if(is_meta(meta)){
+			print_meta(out.stream, StreamPrinter::FMT_DEV);
+			// set the new meta tag and clear sentence ids
+			set_meta();
+			// reset the last tag feature of the NE recogniser
+			ner.begin_document();
+			continue;
+		}
+
+		if(!load_oracle(log.stream))
+			continue;
+
+		std::string line;
+		while(getline(constraints.stream, line)){
+			if(line.size() == 0)
+				break;
+			sent.constraints.push_back(integration.cats.constraint(line));
+		}
+
+		add_id(nsents);
+
+		integration.parse(sent, decoder, printer, false); // don't use the supertagger
+	}
+
+	printer.footer();
+	print_meta(out.stream, FORMAT);
+	
+	return nsents ? double(nparsed)/nsents : nsents;
 }
 
 }

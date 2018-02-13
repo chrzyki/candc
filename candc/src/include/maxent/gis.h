@@ -41,6 +41,9 @@ namespace NLP {
       // distributing the model's probability mass of the features
       double _distribute(PDF &p_classes);
 
+      // sum estimates globally over all nodes in the cluster
+      void _sum_estimates(void);
+
       // apply the update function on each attribute
       void _update(void);
 
@@ -62,6 +65,8 @@ namespace NLP {
       const ulong NKLASSES;
       const double ALPHA;
       const bool VERBOSE;
+      double* global_est;
+      double* local_est;
 
       GIS(const Model::Model &model, bool verbose);
       virtual ~GIS(void);
@@ -86,7 +91,7 @@ namespace NLP {
 
     inline std::ostream &operator<<(std::ostream &s, const GIS &gis){
       return s << gis.to_string();
-    };
+    }
 
   }
 }

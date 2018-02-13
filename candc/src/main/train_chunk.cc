@@ -19,5 +19,5 @@ const char *PROGRAM_NAME = "train_chunk";
 
 int
 run(int argc, char **argv){
-  return run_train<Tagger::Chunk, Extract::Chunk>("%w|%p|%c \n", argc, argv);
+  return run_train<Taggers::Chunk, Extract::Chunk>("%w|%p|%c \n", argc, argv);
 }

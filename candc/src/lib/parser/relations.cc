@@ -28,6 +28,10 @@
 #include "parser/filled.h"
 #include "parser/relations.h"
 
+#include "parser/markedup.h"
+#include "parser/canonical.h"
+#include "parser/categories.h"
+
 #include "share.h"
 
 using namespace std;
@@ -44,7 +48,7 @@ public:
   const Hash hash;
   RelID index;
   RelationEntry *next;
-  char str[0];
+  char str[MIN_STR_BUFFER];
 public:
   RelationEntry(ulong slot, ulong jslot, ulong index,
 		NLP::Hash hash, RelationEntry *next)
@@ -57,17 +61,17 @@ public:
   }
   void operator delete(void *, Pool *, size_t) { /* do nothing */ }
 
-  static RelationEntry *create(Pool *pool, const char *,
-			       ulong, NLP::Hash, RelationEntry *next){ return 0; }
+  static RelationEntry *create(Pool *, const char *,
+			       ulong, NLP::Hash, RelationEntry *){ return 0; }
   static RelationEntry *create(Pool *pool, const std::string &cat, ulong slot, ulong jslot,
 			       ulong index, NLP::Hash hash, RelationEntry *next){
-    RelationEntry *entry = new (pool, cat.size()) RelationEntry(slot, jslot, index, hash, next);
+    RelationEntry *entry = new (pool, get_remainder(cat.size())) RelationEntry(slot, jslot, index, hash, next);
     strcpy(entry->str, cat.c_str());
     return entry;
   }
 
   bool equal(const std::string &cat, ulong slot, const Hash h){
-    return hash == h && slot == rel.slot && strequal(cat.c_str(), rel.cat);
+    return hash == h && slot == rel.slot && strequal(cat.c_str(), rel.cat_str);
   }
   
   RelationEntry *find(const std::string &cat, ulong slot, const Hash h){
@@ -80,6 +84,10 @@ public:
   void set_constraints(const Categories &cats){
     if(rel.gr)
       rel.gr->set_cat(cats);
+  }
+
+  void set_cats(const Categories &cats){
+    rel.cat = cats.markedup[rel.cat_str];
   }
 
   ulong nchained(void){
@@ -157,6 +165,12 @@ public:
       if(*i)
 	(*i)->set_constraints(cats);
   }
+
+  void set_cats(const Categories &cats){
+    for(Entries::iterator i = entries.begin(); i != entries.end(); ++i)
+      if(*i)
+	(*i)->set_cats(cats);
+  }
 };
 
 Relations::Relations(const std::string &name):  _impl(new _Impl(name)){
@@ -217,6 +231,11 @@ Relations::add_gr(const Categories &cats, const std::string &markedup, ulong slo
 void
 Relations::set_constraints(const Categories &cats){
   _impl->set_constraints(cats);
+}
+
+void
+Relations::set_cats(const Categories &cats){
+  _impl->set_cats(cats);
 }
 
 RelID

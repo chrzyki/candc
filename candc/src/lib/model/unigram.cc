@@ -54,10 +54,10 @@ public:
   ~_UniAttribEntry(void) {};
 
   void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); };
-  void operator delete(void *, Pool *pool) { /* do nothing */ };
+  void operator delete(void *, Pool *) { /* do nothing */ };
 
-  static _UniAttribEntry *create(Pool *pool, const std::string &str,
-				 ulong, NLP::Hash, _UniAttribEntry *next){ return 0; }
+  static _UniAttribEntry *create(Pool *, const std::string &,
+				 ulong, NLP::Hash, _UniAttribEntry *){ return 0; }
 
   ulong type(void) const { return _type; };
   Word value(void) const { return _value; };
@@ -95,6 +95,7 @@ public:
     : _ImplBase(name), _lexicon(lexicon) {}
   virtual ~_Impl(void){}
 
+  using _ImplBase::insert;
   Attribute &insert(ulong type, Word value){
     ulong bucket = _UniAttribEntry::hash(type, value) % NBUCKETS_;
 

@@ -17,11 +17,11 @@
 #include "tagger/_baseimpl.h"
 #include "tagger/pos.h"
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 POS::Config::Config(const OpPath *base, Mode mode,
 		    const std::string &name, const std::string &desc)
-  : Tagger::Config(name, desc, base, mode, 0.707, 200),
+  : Tagger::Config(name, desc, base, mode, 1.414, 200),
     number_unknowns(*this, "number_unknowns", "the set of tags for unknown number tokens", "//number_unknowns", &path){}
 
 typedef Tagger::Impl Base;

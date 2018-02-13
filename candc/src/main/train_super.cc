@@ -19,5 +19,5 @@ const char *PROGRAM_NAME = "train_super";
 
 int
 run(int argc, char **argv){
-  return run_train<Tagger::Super, Extract::Super>("%w|%p|%s \n", argc, argv);
+  return run_train<Taggers::Super, Extract::Super>("%w|%p|%s \n", argc, argv);
 }

@@ -28,6 +28,9 @@ namespace NLP {
       CatID lrange1[Vars::NVARS];
       CatID lrange2[Vars::NVARS];
 
+      VarID max1;
+      VarID max2;
+
       Unify(void){};
       ~Unify(void){};
 
@@ -45,7 +48,7 @@ namespace NLP {
 
       void reorder(const SuperCat *sc1, const SuperCat *sc2);
 
-      bool operator()(const Cat *c2){
+      bool operator()(const Cat *){
         nvariables = 1;
         return true;
       }
@@ -60,6 +63,7 @@ namespace NLP {
         memset(seen, 0, sizeof(seen));
         feature = Features::NONE;
         order = 0;
+	max1 = max2 = 0;
 
         if(_unify(c1, c2)){
           _matrix2trans();

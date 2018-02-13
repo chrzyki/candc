@@ -13,7 +13,7 @@
 int run(int argc, char **argv);
 
 int main(int argc, char **argv){
-  Cluster::init(argc, argv);
+  Cluster::init(argc, argv, true);
 
   try {
     int retcode = run(argc, argv);

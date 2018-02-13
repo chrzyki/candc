@@ -43,7 +43,7 @@ namespace NLP {
         return stream << ' ' << node.nchildren;
       else
         return stream << ' ' << node.word;
-    };
+    }
 
     typedef std::vector<TBNode> TBSentence;
   }

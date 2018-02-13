@@ -36,4 +36,9 @@ get_usage(void){
   return usage.ru_maxrss*KILOBYTE;
 }
 
+
+void
+setup_fpu(void) { /* nothing */ }
+
+
 } }

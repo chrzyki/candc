@@ -10,7 +10,7 @@
 
 #include "tagger/_baseimpl.h"
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 Tagger::Config::Config(const std::string &name, const std::string &desc,
 		       const OpPath *base, Mode mode, double SIGMA, ulong NITER)
@@ -21,6 +21,7 @@ Tagger::Config::Config(const std::string &name, const std::string &desc,
 
     cutoff_default(*this, "cutoff_default", "the minimum frequency cutoff for features", 1),
     cutoff_words(*this, "cutoff_words", "the minimum frequency cutoff for word features", 1),
+    cutoff_attribs(*this, "cutoff_attribs", "the minimum frequency cutoff for attributes", 1),
 
     rare_cutoff(*this, "rare_cutoff", "the word frequency for which rare word features are used", 5),
 

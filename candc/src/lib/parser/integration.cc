@@ -27,6 +27,13 @@
 #include "tagger/tagger.h"
 #include "tagger/super.h"
 
+#include "prob.h"
+#include "tagger/taghist.h"
+#include "tagger/nodepool.h"
+#include "tagger/lattice.h"
+#include "tagger/flattice.h"
+#include "tagger/state.h"
+
 #include "parser/parser.h"
 #include "parser/decoder_factory.h"
 
@@ -95,7 +102,12 @@ Integration::Integration(Integration::Config &int_cfg,
     parser(parser_cfg, sent, cats, load),
     nsentences(0), nwords(0), nexceptions(0),
     nfail_nospan(0), nfail_explode(0), nfail_nospan_explode(0),
-    nfail_explode_nospan(0), nsuccesses(BETAS.size(), 0){}
+    nfail_explode_nospan(0), nsuccesses(BETAS.size(), 0),
+    super_state(super.create_state()){}
+
+Integration::~Integration(void){
+  delete super_state;
+}
 
 bool
 Integration::parse(Sentence &sent, Decoder &decoder, Printer &printer, const bool USE_SUPER){
@@ -103,6 +115,7 @@ Integration::parse(Sentence &sent, Decoder &decoder, Printer &printer, const boo
   ulong dict_cutoff = 0;
 
   try {
+    bool repair = false;
 
     ulong last_dict_cutoff = 0;
     int trial = START;
@@ -111,59 +124,65 @@ Integration::parse(Sentence &sent, Decoder &decoder, Printer &printer, const boo
     ++nsentences;
     nwords += sent.words.size();
 
+    parser.reset();
     while(1){
       beta = BETAS[trial];
       dict_cutoff = DICT_CUTOFFS[trial];
 
-      if(USE_SUPER && dict_cutoff != last_dict_cutoff)
-	super.mtag(sent, NLP::Tagger::FWDBWD, dict_cutoff, MIN_BETA);
+      if(USE_SUPER && dict_cutoff != last_dict_cutoff){
+				super.mtag(sent, NLP::Taggers::FWDBWD, dict_cutoff, MIN_BETA, super_state);
+				repair = false;
+      }
       last_dict_cutoff = dict_cutoff;
 
       if(sent.words.size() == 1){
-	++nsuccesses[trial];
-	printer.parsed(0, sent, beta, dict_cutoff);
-	return true;
-      }else if(parser.parse(beta)){
-	parser.calc_scores();
+				++nsuccesses[trial];
+				printer.parsed(0, sent, beta, dict_cutoff);
+				return true;
+      }else if(parser.parse(beta, repair)){
+				parser.calc_scores();
 
-	const SuperCat *root = 0;
-	if((root = parser.best(decoder)) != 0){
-	  ++nsuccesses[trial];
-	  printer.parsed(root, sent, beta, dict_cutoff);
+				const SuperCat *root = 0;
+				if((root = parser.best(decoder)) != 0){
+					++nsuccesses[trial];
+					printer.parsed(root, sent, beta, dict_cutoff);
 
-	  ulong nequiv, ntotal;
-	  double logderivs = parser.calc_stats(nequiv, ntotal);
-	  printer.stats(logderivs, nequiv, ntotal);
+					Statistics stats;
+					parser.calc_stats(stats);
+					printer.stats(stats);
 
-	  return true;
-	}else{
-	  printer.attempted("nospan", sent, beta, dict_cutoff);
-	  if(trial - last < 0){
-	    ++nfail_explode_nospan;
-	    printer.failed("explode/nospan", sent, beta, dict_cutoff);
-	    return false;
-	  }
+					global_stats += stats;
 
-	  last = trial++;
-	  if(trial == static_cast<long>(BETAS.size())){
-	    ++nfail_nospan;
-	    printer.failed("no span", sent, beta, dict_cutoff);
-	    return false;
-	  }
-	}
+					return true;
+				}else{
+					printer.attempted("nospan", sent, beta, dict_cutoff);
+					if(trial - last < 0){
+						++nfail_explode_nospan;
+						printer.failed("explode/nospan", sent, beta, dict_cutoff);
+						return false;
+					}
+					last = trial++;
+					repair = true;
+					if(trial == static_cast<long>(BETAS.size())){
+						++nfail_nospan;
+						printer.failed("no span", sent, beta, dict_cutoff);
+						return false;
+					}
+				}
       }else{
-	printer.attempted("exploded", sent, beta, dict_cutoff);
-	if(trial - last > 0){
-	  ++nfail_nospan_explode;
-	  printer.failed("nospan/explode", sent, beta, dict_cutoff);
-	  return false;
-	}
-	last = trial--;
-	if(trial == -1){
-	  ++nfail_explode;
-	  printer.failed("explode", sent, beta, dict_cutoff);
-	  return false;
-	}
+				printer.attempted("exploded", sent, beta, dict_cutoff);
+				if(trial - last > 0){
+					++nfail_nospan_explode;
+					printer.failed("nospan/explode", sent, beta, dict_cutoff);
+					return false;
+				}
+				last = trial--;
+				repair = false;
+				if(trial == -1){
+					++nfail_explode;
+					printer.failed("explode", sent, beta, dict_cutoff);
+					return false;
+				}
       }
     }
   }catch(NLP::ParseError e){

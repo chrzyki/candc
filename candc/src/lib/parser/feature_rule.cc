@@ -61,7 +61,7 @@ RuleFeature::_add(const Cat *cat1, const Cat *cat2, const Cat *cat3,
 }
 
 void
-RuleFeature::add(const SuperCat *sc, const Words &words, const Words &tags,
+RuleFeature::add(const SuperCat *sc, const Words &, const Words &,
 		 Type type, std::vector<ulong> &ids) const {
   if(type == BRULE)
     _add(sc->left->cat, sc->right->cat, sc->cat, BRULE, ids);
@@ -78,8 +78,7 @@ RuleFeature::_score(const Cat *cat1, const Cat *cat2, const Cat *cat3, Type type
 }
 
 double
-RuleFeature::score(const SuperCat *sc, const Words &words, const Words &tags,
-		   Type type) const {
+RuleFeature::score(const SuperCat *sc, const Words &, const Words &, Type type) const {
   if(type == BRULE)
     return _score(sc->left->cat, sc->right->cat, sc->cat, BRULE);
   else if(type == URULE)

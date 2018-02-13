@@ -34,39 +34,40 @@ namespace NLP {
     MultiRaws msuper;
 
     std::vector<const CCG::Cat *> cats;
+		CCG::Constraints constraints;
 
     RawWords misc[NMISC];
 
     template <class V>
-    static void reset(V &v){
+    static void reset_vector(V &v){
       if(!v.empty())
-	v.clear();
+				v.clear();
     }
 
     void reset(void){
-      reset(words);
-      reset(lemmas);
-      reset(pos);
-      reset(chunks);
-      reset(entities);
-      reset(super);
+      reset_vector(words);
+      reset_vector(lemmas);
+      reset_vector(pos);
+      reset_vector(chunks);
+      reset_vector(entities);
+      reset_vector(super);
 
-      reset(mpos);
-      reset(mchunks);
-      reset(mentities);
-      reset(msuper);
+      reset_vector(mpos);
+      reset_vector(mchunks);
+      reset_vector(mentities);
+      reset_vector(msuper);
 
-      reset(cats);
+      reset_vector(cats);
 
       for(ulong i = 0; i != NMISC; ++i)
-	reset(misc[i]);
+				reset_vector(misc[i]);
     }
 
     std::string last(void) const {
       if(words.size() > 0)
-	return words.back();
+				return words.back();
       else
-	return "";
+				return "";
     }
 
     static const int TYPE_INVALID = 0;
@@ -121,7 +122,7 @@ namespace NLP {
       case 'n': return entities;
       case 's': return super;
       default:
-	throw NLP::Exception(std::string("sentence does not have a single-valued '") + name + "' field");
+				throw NLP::Exception(std::string("sentence does not have a single-valued '") + name + "' field");
       }
     }
 
@@ -132,7 +133,7 @@ namespace NLP {
       case 'N': return mentities;
       case 'S': return msuper;
       default:
-	throw NLP::Exception(std::string("sentence does not have a multi-valued '") + name + "' field");
+				throw NLP::Exception(std::string("sentence does not have a multi-valued '") + name + "' field");
       }
     }
 
@@ -143,9 +144,9 @@ namespace NLP {
       multi.resize(single.size());
 
       for(ulong i = 0; i != single.size(); ++i){
-	MultiRaw &mraw = multi[i];
-	mraw.clear();
-	mraw.push_back(ScoredRaw(single[i], 1.0));
+				MultiRaw &mraw = multi[i];
+				mraw.clear();
+				mraw.push_back(ScoredRaw(single[i], 1.0));
       }
     }
 
@@ -172,16 +173,16 @@ namespace NLP {
       case 'N': return mentities.size();
       case 'S': return msuper.size();
       default:
-	throw NLP::Exception(std::string("sentence does not have a '") + name + "' field");
+				throw NLP::Exception(std::string("sentence does not have a '") + name + "' field");
       }
     }
 
     void check_sizes(const FieldNames &fieldnames){
       const ulong LEN = get_size(fieldnames[0]);
       for(FieldNames::const_iterator f = fieldnames.begin(); f != fieldnames.end(); ++f)
-	if(LEN != get_size(*f))
-	  throw NLP::Exception(std::string("number of tokens in field '") 
-			       + *f + "' does not match field '" + fieldnames[0] + "'");  
+				if(LEN != get_size(*f))
+					throw NLP::Exception(std::string("number of tokens in field '") 
+															 + *f + "' does not match field '" + fieldnames[0] + "'");  
     }
 
   };

@@ -38,4 +38,7 @@ get_usage(void){
   return 0;
 }
 
+void
+setup_fpu(void) { /* nothing */ }
+
 } }

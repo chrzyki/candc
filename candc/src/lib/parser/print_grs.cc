@@ -45,7 +45,7 @@ GRsPrinter::get_grs(const SuperCat *sc, Sentence &sent){
   if(!sc->left)
     sent.cats.push_back(sc->cat);
 
-  sc->get_grs(grs, cats.markedup, cats.relations, filled, sent);
+  sc->get_grs(grs, cats.relations, filled, sent);
 }
 
 } }

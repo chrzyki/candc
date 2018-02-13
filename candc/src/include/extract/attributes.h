@@ -44,7 +44,7 @@ namespace NLP {
     class Attributes {
     public:
       // name for reporting errors and hashtable
-      Attributes(const std::string &name);
+      Attributes(const std::string &name, const NLP::Model::Registry &registry, const NLP::TagSet &klasses);
       // shared, reference counted copy constructor
       Attributes(const Attributes &other);
 
@@ -63,12 +63,13 @@ namespace NLP {
 
       // add the attribute id for attribute (type, value) to the context
       void operator()(Context &context, const Type &type, const std::string &value) const;
-      void operator()(Context &context, const Type &type, const std::string &v1,
-		      const std::string &v2) const;
+      void operator()(Context &context, const Type &type, const std::string &v1, const std::string &v2) const;
+      void operator()(Context &context, const Type &type, const std::string &v1, const std::string &v2, const std::string &v3) const;
 
       // increment the count for feature (type, value, tag)
       void operator()(Tag klass, const Type &type, const std::string &value);
       void operator()(Tag klass, const Type &type, const std::string &v1, const std::string &v2);
+      void operator()(Tag klass, const Type &type, const std::string &v1, const std::string &v2, const std::string &v3);
 
       // remove features with frequency less than freq
       void apply_cutoff(ulong freq);
@@ -79,6 +80,14 @@ namespace NLP {
       // apply a cutoff to a specific feature type or
       // apply a default cutoff
       void apply_cutoff(const Type &type, ulong freq, ulong def);
+     
+      void apply_attrib_cutoff(ulong freq);
+      
+      // merge attributes across the cluster
+      void merge(void);
+
+      // broadcast attributes across the cluster
+      void bcast_indices(void);
 
       // dump out to the model/features and model/attributes files
       void save(const std::string &attributes, const std::string &features, const std::string &PREFACE);

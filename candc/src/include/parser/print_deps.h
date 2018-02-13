@@ -14,13 +14,13 @@ namespace NLP {
 
     class DepsPrinter: public StreamPrinter {
     protected:
-      virtual void unary(Sentence &sent){}
+      virtual void unary(Sentence &){}
       virtual void derivation(const SuperCat *sc, Sentence &sent);
       virtual void lexical(Sentence &sent);
     public:
       DepsPrinter(Categories &cats, const Format FORMAT,
-		  IO::Output &out, IO::Log &log)
-	: StreamPrinter(cats, FORMAT, out, log){}
+                  IO::Output &out, IO::Log &log)
+        : StreamPrinter(cats, FORMAT, out, log){}
 
       virtual ~DepsPrinter(void){ /* do nothing */ }
 

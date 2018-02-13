@@ -15,7 +15,7 @@ namespace NLP {
     class GRsPrinter: public DepsPrinter {
     protected:
       virtual void get_grs(const SuperCat *sc, Sentence &sent);
-      virtual void unary(Sentence &sent){}
+      virtual void unary(Sentence &){}
       virtual void derivation(const SuperCat *sc, Sentence &sent);
     public:
       FilledDeps filled;

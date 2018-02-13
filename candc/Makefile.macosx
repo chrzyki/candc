@@ -13,7 +13,7 @@ PORT = macosx
 PORT_OBJS = src/lib/ports/bsd.o src/lib/ports/unix_common.o src/lib/ports/colour.o
 
 CC = gcc
-CFLAGS = -Wall -O3 -fno-common $(INC)
+CFLAGS = -Wall -Wextra -O3 -fno-common $(INC)
 
 CXX = g++
 CXXFLAGS = $(CFLAGS)
@@ -31,13 +31,13 @@ SOAP_CPP = ext/bin/soapcpp2
 SOAP_CXXFLAGS = $(CXXFLAGS) $(SOAP_INC)
 SOAP_LDFLAGS = $(LDFLAGS)
 
-PYTHON = python2.4
+PYTHON = python2.6
 
 SHAREDLIB = dylib
 LIB_LDFLAGS = -dynamiclib $(LDFLAGS)
 
-PY_INC = -Iext/include -I/Library/Frameworks/Python.framework/Versions/Current/include/python2.4
-PY_LIBS = $(LIBS) -lcandc -Lext/lib -lboost_python-1_33_1 -framework Python
+PY_INC = -Iext/include -I/Library/Frameworks/Python.framework/Versions/Current/include/$(PYTHON)
+PY_LIBS = $(LIBS) -lcandc -Lext/lib -lboost_python -framework Python
 PY_CXXFLAGS = $(CXXFLAGS) -fPIC $(PY_INC)
 PY_LDFLAGS = -bundle $(LDFLAGS)
 

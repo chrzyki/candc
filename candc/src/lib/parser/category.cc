@@ -359,12 +359,19 @@ Cat::out_novar(std::ostream &stream, const bool brack) const {
   return stream;
 }
 
+inline
+std::ostream &
+out_feature(std::ostream &stream, Feature feature){
+  if(feature && feature != Features::X)
+    stream << '[' << feature << ']';
+  return stream;
+}
+
 std::ostream &
 Cat::out_novar_noX(std::ostream &stream, const bool brack) const {
   if(atom){
     stream << atom;
-    if(feature && feature != Features::X)
-      stream << '[' << feature << ']';
+    out_feature(stream, feature);
   }else{
     if(brack)
       stream << '(';
@@ -373,6 +380,68 @@ Cat::out_novar_noX(std::ostream &stream, const bool brack) const {
     arg->out_novar_noX(stream, true);
     if(brack)
       stream << ')';
+  }
+  return stream;
+}
+
+std::ostream &
+Cat::out_boxer(std::ostream &stream, Feature parent, const bool brack) const {
+  if(atom){
+    stream << atom.prolog();
+    if(feature && feature.override(parent))
+      stream << ':' << feature.override(parent);
+  }else{
+    if(brack)
+      stream << '(';
+    res->out_boxer(stream, parent, true);
+    stream << (slash() ? '/' : '\\');
+    arg->out_boxer(stream, parent, true);
+    if(brack)
+      stream << ')';
+  }
+  return stream;
+}
+
+std::ostream &
+Cat::out_short(std::ostream &stream, const bool brack) const {
+  if(atom){
+    stream << atom;
+    out_feature(stream, feature);
+  }else if(is_SbNP()){
+    stream << "VP";
+    out_feature(stream, res->feature);
+  }else{
+    if(brack)
+      stream << '(';
+    res->out_short(stream, true);
+    stream << (slash() ? '/' : '\\');
+    arg->out_short(stream, true);
+    if(brack)
+      stream << ')';
+  }
+  return stream;
+}
+
+std::ostream &
+Cat::out_js(std::ostream &stream) const {
+  stream << "{ ";
+  if(atom){
+    stream << "'a': '" << atom << "', ";
+    if(!feature.is_none())
+      stream << "'f': '" << feature << "', ";
+    stream << "'v': '" << var << "' }";
+  }else if(is_SbNP()){
+    stream << "'a': 'VP', ";
+    if(!res->feature.is_none())
+      stream << "'f': '" << res->feature << "', ";
+    stream << "'v': '" << res->var << "' }";
+  }else{
+    stream << "'s': '" << (slash() ? "/" : "\\\\") << "', ";
+    stream << "'res': ";
+    res->out_js(stream);
+    stream << ", 'arg': ";
+    arg->out_js(stream);
+    stream << ", 'v': '" << var << "' }";
   }
   return stream;
 }

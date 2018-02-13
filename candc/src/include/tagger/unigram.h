@@ -18,7 +18,7 @@
 // this is loaded from the tag dictionary on startup
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     class Unigram {
     public:

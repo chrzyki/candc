@@ -18,5 +18,5 @@ const char *PROGRAM_NAME = "train_ner";
 
 int
 run(int argc, char **argv){
-  return run_train<Tagger::NER, Extract::NER>("%w|%p|%n \n", argc, argv);
+  return run_train<Taggers::NER, Extract::NER>("%w|%p|%n \n", argc, argv);
 }

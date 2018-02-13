@@ -38,10 +38,10 @@ namespace NLP {
   typedef std::vector<RawTag> RawTags;
 
   typedef std::vector<Word> Words;
-  typedef offset_vector<Word, 2, 2> OffsetWords;
+  typedef offset_vector<Word, 3, 3> OffsetWords;
 
   typedef std::vector<Tag> Tags;
-  typedef offset_vector<Tag, 2, 2> OffsetTags;
+  typedef offset_vector<Tag, 3, 4> OffsetTags;
 
   typedef std::vector<ScoredTag> MultiTag;
   typedef std::vector<MultiTag> MultiTags;

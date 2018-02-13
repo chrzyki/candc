@@ -1,8 +1,22 @@
 
-:- module(closure,[closure/3]).
+:- module(closure,[closure/3,closing/1,plosing/1]).
 
+:- use_module(boxer(slashes)).
 :- use_module(library(lists),[member/2]).
-:- use_module(lexicon,[semlex/5]).
+:- use_module(boxer(lexicon),[semlex/5]).
+:- use_module(semlib(errors),[warning/2]).
+:- use_module(semlib(options),[option/2]).
+
+
+/* =========================================================================
+   Closing and propositonal closing (Plosing)
+========================================================================= */
+
+closing(lam(_,_:drs([],[]))).
+
+plosing(lam(X,B:drs([],[B:[]:pred(X,closing,v,99)]))):- option('--semantics',amr), !.
+plosing(lam(X,B:drs([],[B:[]:pred(X,closing,v,99)]))):- option('--semantics',tacitus), !.
+plosing(lam(_,_:drs([],[]))).
 
 
 /* -------------------------------------------------------------------------
@@ -10,121 +24,131 @@
 ------------------------------------------------------------------------- */
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[wq]','S[dcl]','S[q]','S','S[pss]','S[em]','S[b]','S[bem]',
-               'S[to]','S[ng]','S[pt]','S[qem]','S[X]','S[adj]','S[intj]','S[inv]',
-               'S[frg]','S[poss]']), !,
-   Closed = app(Sem,lam(E,drs([],[[]:pred(E,event,n,1)]))).
+   member(Cat,[t:_, t]), !, 
+   Closed = Sem.
+
+closure(s:_,Sem,Closed):- !,
+   plosing(CC),
+   Closed = app(Sem,CC).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[dcl]/NP','S[dcl]\NP','S[b]\NP','S[b]/NP','S[pt]/NP',
-               'S[to]\NP','S[ng]\NP','S[adj]\NP','S[pss]\NP','S[q]/NP',
-               'S[pss]/NP','S[pt]\NP']), !,
-   Closed = app(app(Sem,lam(P,merge(drs([[]:X],[[]:pred(X,thing,n,12)]),app(P,X)))),lam(E,drs([],[[]:pred(E,event,n,1)]))).
+   member(Cat,[s:b\np]), 
+   option('--semantics',amr), !,
+   Imp=lam(X,B:drs([],[B:[]:pred(X,closing,v,99),B:[]:pred(X,imperative,r,0)])),
+   Closed = app(app(Sem,lam(P,merge(B:drs([B:[]:X],[B:[]:pred(X,you,n,1)]),app(P,X)))),Imp).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[dcl]/PP','S[wq]/PP']), !,
-   Closed = app(app(Sem,lam(X,drs([],[[]:pred(X,thing,n,12)]))),lam(E,drs([],[[]:pred(E,event,n,1)]))).
+   member(Cat,[s:_\np, s:_/np]), !,
+   plosing(CC),
+   Closed = app(app(Sem,lam(P,merge(B:drs([B:[]:X],[B:[]:pred(X,thing,n,12)]),app(P,X)))),CC).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[X]/S[X]',
-               'S[X]\S[X]',
-               'S[b]/S[dcl]',
-               'S[dcl]/S[dcl]',
-               'S[dcl]/S[em]',
-               'S[pss]/S[em]',
-               'S[dcl]\S[dcl]',
-               'S[b]\S[b]',
-               'S[ng]\S[ng]',
-               'S[wq]/S[q]']), !,
-   Closed = app(app(Sem,lam(P,merge(drs([[]:X],[[]:pred(X,event,n,1)]),app(P,X)))),lam(E,drs([],[[]:pred(E,event,n,1)]))).
+   member(Cat,[s:_/pp, s:_\pp]), !,
+   plosing(CC),
+   Closed = app(app(Sem,lam(X,B:drs([],[B:[]:pred(X,thing,n,12)]))),CC).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['(S[X]/S[X])/(S[X]/S[X])',
-               '(S[X]/S[X])\(S[X]/S[X])',
-               '(S[X]\S[X])/(S[X]\S[X])',
-               '(S[X]\S[X])\(S[X]\S[X])']), !,
+   member(Cat,[s:_/s:_, s:_\s:_]), !,
+   plosing(CC),
+   Closed = app(app(Sem,lam(P,merge(B:drs([B:[]:X],[B:[]:pred(X,event,n,1)]),app(P,X)))),CC).
+
+closure(Cat,Sem,Closed):-
+   member(Cat,[(s:_/s:_)/(s:_/s:_), (s:_/s:_)\(s:_/s:_),
+               (s:_\s:_)/(s:_\s:_), (s:_\s:_)\(s:_\s:_)]), !,
+   plosing(CC),
    Closed = app(app(app(Sem,lam(S,lam(F,app(S,lam(E,app(F,E)))))),
-                    lam(P,merge(drs([[]:X],[]),app(P,X)))),
-                lam(E,drs([],[[]:pred(E,event,n,1)]))).
+                    lam(P,merge(B:drs([B:[]:X],[]),app(P,X)))),CC).
+
+closure(Cat,Sem,Closed):-   
+   option('--semantics',amr),
+   member(Cat,[np, np:_]), !,
+   Closed = app(Sem,lam(X,B:drs([],[B:[]:pred(X,closing,v,99)]))).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['NP','NP[nb]']), !,
-   Closed = app(Sem,lam(X,drs([],[[]:pred(X,topic,a,1)]))).
+   member(Cat,[np, np:_]), !,
+   Closed = app(Sem,lam(X,B:drs([],[B:[]:pred(X,topic,a,1)]))).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['NP[nb]/N']), !,
-   Closed = app(app(Sem,lam(_,drs([],[]))),lam(X,drs([],[[]:pred(X,topic,a,1)]))).
+   option('--semantics',amr),
+   member(Cat,[np:nb/n, np/n]), !, 
+   Closed = app(app(Sem,lam(_,_:drs([],[]))),lam(X,B:drs([],[B:[]:pred(X,closing,v,99)]))).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['NP\NP']), !,
-   Closed = app(app(Sem,lam(P,merge(drs([[]:X],[[]:pred(X,thing,n,12)]),app(P,X)))),
-                lam(X,drs([],[[]:pred(X,thing,n,12)]))).
+   member(Cat,[np:nb/n, np/n]), !, 
+   Closed = app(app(Sem,lam(_,_:drs([],[]))),lam(X,B:drs([],[B:[]:pred(X,topic,a,1)]))).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['N','PP']), !,
-   Closed = merge(drs([[]:X],[[]:pred(X,topic,a,1)]),app(Sem,X)).
+   member(Cat,[np\np, np/np]), !, 
+   Closed = app(app(Sem,lam(P,merge(B1:drs([B1:[]:X],[B1:[]:pred(X,thing,n,12)]),app(P,X)))),
+                lam(X,B2:drs([],[B2:[]:pred(X,thing,n,12)]))).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['(S[X]\NP)\((S[X]\NP)/NP)']), !,
-   semlex('(S[dcl]\NP)/NP',event,_,[],TV),
-   closure('S[dcl]\NP',app(Sem,TV),Closed).
+   option('--semantics',amr),
+   member(Cat,[n, pp]), !,
+   Closed = merge(B:drs([B:[]:X],[B:[]:pred(X,closing,v,99)]),app(Sem,X)).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['(S[X]\NP)\((S[X]\NP)/PP)']), !,
-   semlex('(S[dcl]\NP)/PP',event,_,[],TV),
-   closure('S[dcl]\NP',app(Sem,TV),Closed).
+   member(Cat,[n, pp]), !,
+   Closed = merge(B:drs([B:[]:X],[B:[]:pred(X,topic,a,1)]),app(Sem,X)).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['(S[X]\NP)\(((S[X]\NP)/PP)/NP)']), !,
-   semlex('((S[dcl]\NP)/PP)/NP',event,_,[],DTV),
-   closure('S[dcl]\NP',app(Sem,DTV),Closed).
+   member(Cat,[(s:_\np)\((s:_\np)/np)]), !,
+   semlex((s:dcl\np)/np,event,[],[]-_,TV),
+   closure(s:dcl\np,app(Sem,TV),Closed).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['(S[dcl]\NP)/(S[b]\NP)',
-               '(S[to]\NP)(S[to]\NP)',
-               '(S[b]\NP)\(S[b]\NP)']), !,
-   semlex('S[b]\NP',event,_,[],IV),
-   closure('S[dcl]\NP',app(Sem,IV),Closed).
+   member(Cat,[(s:_\np)\((s:_\np)/pp)]), !,
+   semlex((s:dcl\np)/pp,event,[],[]-_,TV),
+   closure(s:dcl\np,app(Sem,TV),Closed).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['(S[X]\NP)\(S[X]\NP)',
-               '(S[X]\NP)/(S[X]\NP)',
-               '(S[dcl]/NP)\(S[dcl]/NP)',
-               '(S[dcl]\NP)\(S[dcl]\NP)']), !,
-   semlex('S[dcl]\NP',event,_,[],IV),
-   closure('S[dcl]\NP',app(Sem,IV),Closed).
+   member(Cat,[(s:_\np)\(((s:_\np)/pp)/np)]), !,
+   semlex(((s:dcl\np)/pp)/np,event,[],[]-_,DTV),
+   closure(s:dcl\np,app(Sem,DTV),Closed).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[dcl]/(S[adj]\NP)']), !,
-   semlex('S[adj]\NP',event,_,[],IV),
-   closure('S[dcl]',app(Sem,IV),Closed).
+   member(Cat,[(s:dcl\np)/(s:b\np),
+               (s:to\np)\(s:to\np),
+               (s:b\np)\(s:b\np)]), !,
+   semlex(s:b\np,event,[],[]-_,IV),
+   closure(s:dcl\np,app(Sem,IV),Closed).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[X]/(S[X]\NP)']), !,
-   semlex('S[dcl]\NP',event,_,[],IV),
-   closure('S[dcl]',app(Sem,IV),Closed).
+   member(Cat,[(s:_\np)\(s:_\np),
+               (s:_\np)/(s:_\np),
+               (s:dcl/np)\(s:dcl/np),
+               (s:dcl\np)\(s:dcl\np)]), !,
+   semlex(s:dcl\np,event,[],[]-_,IV),
+   closure(s:dcl\np,app(Sem,IV),Closed).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[wq]/(S[q]/NP)','S[wq]/(S[adj]\NP)']), !,
-   semlex('S[dcl]\NP',event,_,[],IV),
-   closure('S[wq]',app(Sem,IV),Closed).
+   member(Cat,[s:dcl/(s:adj\np)]), !,
+   semlex(s:adj\np,event,[],[]-_,IV),
+   closure(s:dcl,app(Sem,IV),Closed).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[wq]/(S[pss]\NP)','S[q]/(S[pss]\NP)']), !,
-   semlex('S[pss]\NP',event,_,[],IV),
-   closure('S[wq]',app(Sem,IV),Closed).
+   member(Cat,[s:_/(s:_\np)]), !,
+   semlex(s:dcl\np,event,[],[]-_,IV),
+   closure(s:dcl,app(Sem,IV),Closed).
 
 closure(Cat,Sem,Closed):-
-   member(Cat,['S[wq]/(S[b]\NP)',
-               'S[q]/(S[b]\NP)',
-               'S[q]/(S[ng]\NP)',
-               'S[qem]/(S[dcl]/NP)']), !,
-   semlex('S[dcl]\NP',event,_,[],IV),
-   closure('S[wq]',app(Sem,IV),Closed).
+   member(Cat,[s:wq/(s:q/np), s:wq/(s:adj\np)]), !,
+   semlex(s:dcl\np,event,[],[]-_,IV),
+   closure(s:wq,app(Sem,IV),Closed).
+
+closure(Cat,Sem,Closed):-
+   member(Cat,[s:wq/(s:pss\np), s:q/(s:pss\np)]), !,
+   semlex(s:pss\np,event,[],[]-_,IV),
+   closure(s:wq,app(Sem,IV),Closed).
+
+closure(Cat,Sem,Closed):-
+   member(Cat,[s:wq/(s:b\np),
+               s:q/(s:b\np),
+               s:q/(s:ng\np),
+               s:qem/(s:dcl/np)]), !,
+   semlex(s:dcl\np, event,[],[]-_,IV),
+   closure(s:wq, app(Sem,IV),Closed).
 
 closure(X,_,_):-
-   user:option('--warnings',true),
-   write(user_error,'WARNING: no closure operation for '), writeq(X), nl, 
+   warning('no closure operation for ~p',[X]), 
    fail.
-
-

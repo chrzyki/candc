@@ -19,6 +19,10 @@ if [ ! $# == 3 ]; then
   ) > /dev/stderr;
     exit 1;
 fi
+if [ ! -r bin/generate ]; then
+  echo 'bin/generate is missing ($ make bin/generate)' >&2
+  exit 1
+fi
 
 CCGBANK=$1
 NNODES=$2

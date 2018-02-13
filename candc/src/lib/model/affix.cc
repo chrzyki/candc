@@ -60,10 +60,10 @@ public:
   ~_AffixAttrEntry(void) {};
 
   void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); };
-  void operator delete(void *, Pool *pool) { /* do nothing */ };
+  void operator delete(void *, Pool *) { /* do nothing */ };
 
-  static _AffixAttrEntry *create(Pool *pool, const std::string &str,
-				 ulong, NLP::Hash, _AffixAttrEntry *next){ return 0; }
+  static _AffixAttrEntry *create(Pool *, const std::string &,
+				 ulong, NLP::Hash, _AffixAttrEntry *){ return 0; }
 
   ulong type(void) const { return _type; };
   Affix affix(void) const { return _affix; };
@@ -93,6 +93,7 @@ public:
   _Impl(const string &name): _ImplBase(name){}
   virtual ~_Impl(void){}
 
+  using _ImplBase::insert;
   Attribute &insert(ulong type, Affix value){
     ulong bucket = _AffixAttrEntry::hash(type, value) % NBUCKETS_;
 

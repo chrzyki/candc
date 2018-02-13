@@ -13,7 +13,7 @@
 // extracts features from chunk tagged training data
 // saves the extracted model into the specified model directory
 // which is then loaded by NLP::MaxEnt::GIS for estimating
-// the parameters of the model, and NLP::Tagger::Chunk for tagging
+// the parameters of the model, and NLP::Taggers::Chunk for tagging
 
 namespace NLP {
   namespace Extract {
@@ -31,7 +31,7 @@ namespace NLP {
       NLP::Lexicon lexicon(void) const;	// lexicon produced
 
       // configuration information for extracting the model
-      Chunk(NLP::Tagger::Chunk::Config &cfg, const std::string &preface, bool verbose);
+      Chunk(NLP::Taggers::Chunk::Config &cfg, const std::string &preface, bool verbose);
       // shared, reference counted copy constructor
       Chunk(const Chunk &other);
 

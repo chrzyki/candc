@@ -41,7 +41,7 @@ namespace NLP {
       ~Filled(void) { /* do nothing */ }
 
       void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); };
-      void operator delete(void *, Pool *pool) { /* do nothing */ }
+      void operator delete(void *, Pool *) { /* do nothing */ }
     };
 
     inline std::ostream &operator <<(std::ostream &out, const Filled &dep){

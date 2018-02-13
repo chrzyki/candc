@@ -10,15 +10,25 @@
 // please email candc@it.usyd.edu.au to obtain a copy.
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     class Super: public Tagger {
     public:
       class Config: public Tagger::Config {
       public:
-	Op<ulong> category_cutoff;
-	OpPath postags;
-	OpPath posdict;
+        Op<ulong> category_cutoff;
+        OpPath postags;
+        OpPath posdict;
+        Op<bool> surr3words;
+        Op<bool> surr3tags;
+        Op<bool> biwords;
+        Op<bool> biwords_far;
+        Op<bool> triwords;
+        Op<bool> triwords_far;
+        Op<bool> bitags;
+        Op<bool> bitags_far;
+        Op<bool> tritags;
+        Op<bool> tritags_far;
 
       	Config(const OpPath *base = 0, Mode mode = DECODE,
 	       const std::string &name = "super",

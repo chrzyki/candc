@@ -1,0 +1,162 @@
+
+:- module(determiners,[semlex_det/3]).
+
+/* =========================================================================
+   Determiners: NP/N
+
+   This file contains the lexical semantic specifications for determiners,
+   i.e. tokens with CCG category NP/N.
+========================================================================= */
+
+
+/* -------------------------------------------------------------------------
+   Indefinites
+------------------------------------------------------------------------- */
+
+semlex_det(Lemma,Index,Sem):-
+   member(Lemma,[a,an,one,some,few,several]), !,
+   Sem = lam(N,lam(P,merge(merge(drs([Index:X],[]),
+                                 app(N,X)),
+                           app(P,X)))).
+
+
+/* -------------------------------------------------------------------------
+   Universally quantifying
+------------------------------------------------------------------------- */
+
+semlex_det(Lemma,Index,Sem):-
+   member(Lemma,[all,each,either,any,every,whichever,whatever]), !,
+   Sem = lam(N,lam(P,drs([],[[]:imp(merge(drs([Index:X],[]),
+                                          app(N,X)),
+                                    app(P,X))]))).
+
+
+/* -------------------------------------------------------------------------
+   Negation
+------------------------------------------------------------------------- */
+
+semlex_det(no,Index,Sem):- !,
+   Sem = lam(N,lam(P,drs([],[Index:not(merge(drs([Index:X],[]),
+                                             merge(app(N,X),
+                                                   app(P,X))))]))).
+
+
+/* -------------------------------------------------------------------------
+   Definites/Demonstratives
+------------------------------------------------------------------------- */
+
+semlex_det(Lemma,Index,Sem):-
+%  option('--alfa',move),
+   member(Lemma,[the,that,this,those,these,both]), !,
+   Sem = lam(N,lam(P,alfa(def,merge(drs([Index:X],[]),
+                                    app(N,X)),
+                              app(P,X)))).
+
+semlex_det(Lemma,Index,Sem):-
+   option('--alfa',copy),
+   member(Lemma,[the,that,this,those,these,both]), !,
+   Sem = lam(N,lam(P,alfa(def,merge(drs([Index:Y],[]),
+                                    app(N,Y)),
+                              merge(drs([Index:X],[[]:eq(X,Y)]),merge(app(N,X),app(P,X)))))).
+
+
+/* -------------------------------------------------------------------------
+   WH
+------------------------------------------------------------------------- */
+
+semlex_det(Lemma,Index,Sem):-
+   member(Lemma,[which,what]), !,
+   Sem = lam(N,lam(P,drs([],[[]:whq([],
+                                       merge(drs([Index:X],[]),app(N,X)),
+                                       X,
+                                       app(P,X))]))).
+
+
+/* -------------------------------------------------------------------------
+   "another"
+------------------------------------------------------------------------- */
+
+semlex_det(another,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(def,merge(drs([[]:Y],[]),
+                                    app(N,Y)),
+                              merge(merge(drs([Index:X],
+                                              [[]:not(drs([],[[]:eq(X,Y)]))]),
+                                          app(N,X)),
+                                    app(P,X))))).
+
+
+/* -------------------------------------------------------------------------
+   "neither" (see Heim & Kratzer 1998 p. 154)
+------------------------------------------------------------------------- */
+
+semlex_det(neither,Index,Sem):- !,
+   Sem = lam(N,lam(P,drs([],[[]:imp(merge(drs([Index:X],[]),app(N,X)),
+                                          drs([],[Index:not(app(P,X))]))]))).
+
+
+/* -------------------------------------------------------------------------
+   Possessives
+------------------------------------------------------------------------- */
+
+semlex_det(my,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(pro,drs([[]:Y],[[]:pred(Y,person,n,1)]),
+                              alfa(def,merge(drs([[]:X],[Index:rel(X,Y,of,0)]),
+                                             app(N,X)),
+                                       app(P,X))))).
+
+semlex_det(your,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(pro,drs([[]:Y],[[]:pred(Y,person,n,1)]),
+                              alfa(def,merge(drs([[]:X],[Index:rel(X,Y,of,0)]),
+                                             app(N,X)),
+                                       app(P,X))))).
+
+semlex_det(his,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(pro,drs([[]:Y],[[]:pred(Y,male,a,0)]),
+                              alfa(def,merge(drs([[]:X],[Index:rel(X,Y,of,0)]),
+                                             app(N,X)),
+                                       app(P,X))))).
+
+semlex_det(her,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(pro,drs([[]:Y],[[]:pred(Y,female,a,0)]),
+                              alfa(def,merge(drs([[]:X],[Index:rel(X,Y,of,0)]),
+                                             app(N,X)),
+                                       app(P,X))))).
+
+semlex_det(its,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(pro,drs([[]:Y],[[]:pred(Y,neuter,a,0)]),
+                              alfa(def,merge(drs([[]:X],[Index:rel(X,Y,of,0)]),
+                                             app(N,X)),
+                                       app(P,X))))).
+
+semlex_det(our,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(pro,drs([[]:Y],[[]:pred(Y,person,n,1)]),
+                              alfa(def,merge(drs([[]:X],[Index:rel(X,Y,of,0)]),
+                                             app(N,X)),
+                                       app(P,X))))).
+
+semlex_det(their,Index,Sem):- !,
+   Sem = lam(N,lam(P,alfa(pro,drs([[]:Y],[[]:pred(Y,thing,n,12)]),
+                              alfa(def,merge(drs([[]:X],[Index:rel(X,Y,of,0)]),
+                                             app(N,X)),
+                                       app(P,X))))).
+
+
+/* -------------------------------------------------------------------------
+   Many/Much [as determiner]
+------------------------------------------------------------------------- */
+
+semlex_det(many,Index,Sem):- !,
+   Sem = lam(P,lam(Q,merge(drs([[]:X],[Index:pred(X,quantity,n,1)]),
+                           merge(app(P,X),app(Q,X))))).
+
+semlex_det(much,Index,Sem):- !,
+   Sem = lam(P,lam(Q,merge(drs([[]:X],[Index:pred(X,amount,n,3)]),
+                           merge(app(P,X),app(Q,X))))).
+
+
+/* -------------------------------------------------------------------------
+   Wrongly classified determiners
+------------------------------------------------------------------------- */
+
+semlex_det(_Lemma,Index,Sem):-
+   Sem = lam(N,lam(P,merge(merge(drs([Index:X],[]),app(N,X)),app(P,X)))).

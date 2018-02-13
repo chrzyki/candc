@@ -101,7 +101,7 @@ RuleDepFeature::_add(const Cat *cat1, const Cat *cat2, const Cat *cat3, const Su
 
 
 void
-RuleDepFeature::add(const SuperCat *sc, const Words &words, const Words &tags, Type type,
+RuleDepFeature::add(const SuperCat *sc, const Words &words, const Words &tags, Type,
 		    std::vector<ulong> &ids) const {
   _add(sc->left->cat, sc->right->cat, sc->cat, sc->left, sc->right, BRULE_HEAD_HEAD,
        words, words, ids);
@@ -163,8 +163,7 @@ RuleDepFeature::_score(const Cat *cat1, const Cat *cat2, const Cat *cat3, const 
 }
 
 double
-RuleDepFeature::score(const SuperCat *sc, const Words &words, const Words &tags,
-		      Type type) const {
+RuleDepFeature::score(const SuperCat *sc, const Words &words, const Words &tags, Type) const {
   double score = 0.0;
 
   score += _score(sc->left->cat, sc->right->cat, sc->cat, sc->left, sc->right, BRULE_HEAD_HEAD,

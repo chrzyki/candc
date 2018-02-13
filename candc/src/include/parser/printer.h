@@ -26,14 +26,12 @@ namespace NLP {
 	beta = BETA;
 	dict_cutoff = DICT_CUTOFF;
 
-	logderivs = 0;
-	nequiv = 0;
-	ntotal = 0;
+	statistics.reset();
       }
 
-      virtual void unary(Sentence &sent){}
-      virtual void derivation(const SuperCat *sc, Sentence &sent){}
-      virtual void lexical(Sentence &sent){}
+      virtual void unary(Sentence &){}
+      virtual void derivation(const SuperCat *, Sentence &){}
+      virtual void lexical(Sentence &){}
     public:
       Categories &cats;
 
@@ -46,24 +44,22 @@ namespace NLP {
       double beta;
       ulong dict_cutoff;
 
-      double logderivs;
-      ulong nequiv;
-      ulong ntotal;
+      Statistics statistics;
 
       float coverage(void) const { return nparsed*100.0/nsentences; }
 
       Printer(Categories &cats)
 	: cats(cats),
 	  nsentences(0), nparsed(0),
-	  success(false),
-	  logderivs(0), nequiv(0), ntotal(0){}
+	  success(false){}
 
       virtual ~Printer(void){ /* do nothing */ }
 
-      virtual void header(const std::string &preface){}
+      virtual void header(const std::string &){}
       virtual void footer(void){}
 
-      virtual void parsed(const SuperCat *root, Sentence &sent, double BETA, ulong DICT_CUTOFF){
+      virtual void parsed(const SuperCat *root, Sentence &sent,
+			  double BETA, ulong DICT_CUTOFF){
 	set(true, true, "parsed", BETA, DICT_CUTOFF);
 
 	sent.cats.clear();
@@ -76,21 +72,19 @@ namespace NLP {
 	lexical(sent);
       }
 
-      virtual void stats(const double LOGDERIVS, const ulong NEQUIV, const ulong NTOTAL){
-	logderivs = LOGDERIVS;
-	nequiv = NEQUIV;
-	ntotal = NTOTAL;
+      virtual void stats(const Statistics &stats){
+	statistics = stats;
       }
 
-      virtual void attempted(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF){
+      virtual void attempted(const std::string &REASON, Sentence &, double BETA, ulong DICT_CUTOFF){
 	set(false, false, REASON, BETA, DICT_CUTOFF);
       }
 
-      virtual void failed(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF){
+      virtual void failed(const std::string &REASON, Sentence &, double BETA, ulong DICT_CUTOFF){
 	set(true, false, REASON, BETA, DICT_CUTOFF);
       }
 
-      virtual void error(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF){
+      virtual void error(const std::string &REASON, Sentence &, double BETA, ulong DICT_CUTOFF){
 	set(true, false, REASON, BETA, DICT_CUTOFF);
       }
     };

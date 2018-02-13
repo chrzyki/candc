@@ -39,11 +39,12 @@ gettimes(Time &usr, Time &sys, Time &total){
 
 void
 make_directory(const std::string &dir){
-  if(mkdir(dir.c_str(), 0755))
+  if(mkdir(dir.c_str(), 0755)){
     if(errno == EEXIST)
       cerr << "using existing directory " << dir << endl;
     else
       throw NLP::IOException("could not create directory", dir);
+  }
 }
 
 } }

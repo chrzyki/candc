@@ -55,7 +55,7 @@ ulong rule_fails = 0;
 
 
 bool Rules::operator()(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf, 
-		       bool tb_rules, bool questions, SuperCats &results){
+		       bool tb_rules, bool, SuperCats &results){
   assert(results.size() <= results.capacity());
 
   ulong f1 = flags(sc1);
@@ -121,7 +121,7 @@ bool Rules::operator()(const SuperCat *sc1, const SuperCat *sc2, const bool eisn
   }
 }
 
-bool Rules::operator()(const SuperCat *sc1, const SuperCat *sc2, const SuperCat *TB1, const SuperCat *TB2,
+bool Rules::operator()(const SuperCat *sc1, const SuperCat *sc2, const SuperCat *, const SuperCat *,
 		       const SuperCat *TBres, const bool eisner_nf, SuperCats &results){
   ulong f1 = flags(sc1);
   ulong f2 = flags(sc2);
@@ -225,7 +225,7 @@ Rules::forward_app(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_n
   unify.reorder(sc1, sc2);
 
   Cat *rescat = Cat::Trans(pool, sc1->cat->res, unify.trans1, unify.feature);
-  SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_APP, sc1, sc2, unify);
+  SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_APP, 0, sc1, sc2, unify);
   if(ressc)
     res.push_back(ressc);
   return true;
@@ -252,7 +252,7 @@ bool Rules::backward_app(const SuperCat *sc1, const SuperCat *sc2, const bool ei
   unify.reorder(sc1, sc2);
 
   Cat *rescat = Cat::Trans(pool, sc2->cat->res, unify.trans2, unify.feature);
-  SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_APP, sc1, sc2, unify);
+  SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_APP, 0, sc1, sc2, unify);
   if(ressc)
     res.push_back(ressc);
   return true;
@@ -269,8 +269,9 @@ Rules::gen_backward_app(const SuperCat *sc1, const SuperCat *sc2, const Cat *tb,
 }
 
 // TODO could put a depth limit on this
-bool Rules::forward_comp_recursive(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf, 
-				   SuperCats &res){
+bool
+Rules::forward_comp_recursive(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf, 
+			      SuperCats &res){
   const Cat *cat1 = sc1->cat;
   const Cat *cat2 = sc2->cat;
 
@@ -287,7 +288,7 @@ bool Rules::forward_comp_recursive(const SuperCat *sc1, const SuperCat *sc2, con
 
     const Cat *rescat = Cat::Insert12(pool, cat1->res, at, cat2, sc1->cat->var, sc1, sc2, unify);
     if(rescat){
-      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_COMP | SuperCat::RECURSIVE, sc1, sc2, unify);
+      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_COMP | SuperCat::RECURSIVE, 2, sc1, sc2, unify);
       if(ressc)
 	res.push_back(ressc);
       return true;
@@ -304,7 +305,7 @@ bool Rules::forward_comp_recursive(const SuperCat *sc1, const SuperCat *sc2, con
 
     const Cat *rescat = Cat::Insert12(pool, cat1->res, at, cat2, sc1->cat->var, sc1, sc2, unify);
     if(rescat){
-      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_COMP | SuperCat::RECURSIVE, sc1, sc2, unify);
+      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_COMP | SuperCat::RECURSIVE, 3, sc1, sc2, unify);
       if(ressc)
 	res.push_back(ressc);
       return true;
@@ -326,7 +327,7 @@ Rules::forward_comp(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_
 
   Cat *rescat = Cat::Join12(pool, sc1->cat->res, FWD, sc2->cat->arg, sc1->cat->var, sc1, sc2, unify);
   if(rescat){
-    SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_COMP, sc1, sc2, unify);
+    SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::FWD_COMP, 0, sc1, sc2, unify);
     if(ressc)
       res.push_back(ressc);
     return true;
@@ -357,7 +358,7 @@ Rules::backward_comp(const SuperCat *sc1, const SuperCat *sc2, const bool eisner
   // this is an arbitrary decision -- we haven't developed a rationale for left over right
   Cat *rescat = Cat::Join21(pool, sc2->cat->res, BWD, sc1->cat->arg, sc1->cat->var, sc1, sc2, unify);
   if(rescat){
-    SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_COMP, sc1, sc2, unify);
+    SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_COMP, 0, sc1, sc2, unify);
     if(ressc)
       res.push_back(ressc);
     return true;
@@ -394,7 +395,7 @@ Rules::backward_cross_recursive(const SuperCat *sc1, const SuperCat *sc2, const 
     // arbitrary decision to take variable from left rather than right
     const Cat *rescat = Cat::Insert21(pool, cat2->res, at, cat1, sc1->cat->var, sc1, sc2, unify);
     if(rescat){
-      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_CROSS | SuperCat::RECURSIVE, sc1, sc2, unify);
+      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_CROSS | SuperCat::RECURSIVE, 2, sc1, sc2, unify);
       if(ressc)
 	res.push_back(ressc);
       return true;
@@ -411,7 +412,7 @@ Rules::backward_cross_recursive(const SuperCat *sc1, const SuperCat *sc2, const 
 
     const Cat *rescat = Cat::Insert21(pool, cat2->res, at, cat1, sc1->cat->var, sc1, sc2, unify);
     if(rescat){
-      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_CROSS | SuperCat::RECURSIVE, sc1, sc2, unify);
+      SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_CROSS | SuperCat::RECURSIVE, 3, sc1, sc2, unify);
       if(ressc)
 	res.push_back(ressc);
       return true;
@@ -434,13 +435,13 @@ Rules::backward_cross(const SuperCat *sc1, const SuperCat *sc2, const bool eisne
   // outer variable from left
   Cat *rescat = Cat::Join21(pool, sc2->cat->res, FWD, sc1->cat->arg, sc1->cat->var, sc1, sc2, unify);
   if(rescat){
-    SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_CROSS, sc1, sc2, unify);
+    SuperCat *ressc = SuperCat::Rule(pool, rescat, SuperCat::BWD_CROSS, 0, sc1, sc2, unify);
     if(ressc)
       res.push_back(ressc);
     return true;
   }else
     return false;
-};
+}
 
 bool
 Rules::gen_backward_cross(const SuperCat *sc1, const SuperCat *sc2, const Cat *tb, const bool eisner_nf, 
@@ -453,7 +454,8 @@ Rules::gen_backward_cross(const SuperCat *sc1, const SuperCat *sc2, const Cat *t
 }
 
 bool
-Rules::backward_comp_recursive(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf, SuperCats &res){
+Rules::backward_comp_recursive(const SuperCat *sc1, const SuperCat *sc2,
+			       const bool, SuperCats &res){
   if(!EXTRA_RULES)
     return false;
 
@@ -474,12 +476,12 @@ Rules::backward_comp_recursive(const SuperCat *sc1, const SuperCat *sc2, const b
 
   unify.add_vars1(cat1);
 
-  SuperCat *ressc = SuperCat::Rule(pool, sc1->cat, SuperCat::BWD_COMP | SuperCat::RECURSIVE, sc1, sc2, unify);
+  SuperCat *ressc = SuperCat::Rule(pool, sc1->cat, SuperCat::BWD_COMP | SuperCat::RECURSIVE, 2, sc1, sc2, unify);
   if(ressc)
     res.push_back(ressc);
 
   return true;
-};
+}
 
 bool
 Rules::conj(const SuperCat *sc1, const SuperCat *sc2, SuperCats &res){
@@ -493,8 +495,7 @@ Rules::conj(const SuperCat *sc1, const SuperCat *sc2, SuperCats &res){
   Cat *cat = Cat::Complex(pool, sc2->cat, BWD, sc2->cat, Vars::NONE);
   res.push_back(SuperCat::Conj(pool, cat, SuperCat::CONJ, sc1, sc2));
   return true;
-};
-
+}
 
 bool
 Rules::left_comma_typechange(const SuperCat *sc1, const SuperCat *sc2, SuperCats &res){
@@ -518,6 +519,9 @@ Rules::left_comma_typechange(const SuperCat *sc1, const SuperCat *sc2, SuperCats
 // analysed in the Penn Treebank (and hence CCGBank)
 bool
 Rules::funny_conj(const SuperCat *sc1, const SuperCat *sc2, SuperCats &res){
+  if(!NOISY_RULES)
+    return false;
+
   if(!sc1->cat->is_conj() || !sc2->cat->is_N())
     return false;
 
@@ -727,7 +731,7 @@ Rules::gen_misc(const SuperCat *sc1, const SuperCat *sc2, const Cat *tb, SuperCa
 
 bool
 Rules::appositions(const SuperCat *sc1, const SuperCat *sc2, SuperCats &res){
-  if(!EXTRA_RULES)
+  if(!EXTRA_RULES || !NOISY_RULES)
     return false;
 
   if(sc1->cat->is_NP()){

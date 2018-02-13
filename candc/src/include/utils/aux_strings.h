@@ -9,6 +9,7 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
+#include	<cstring>
 
 inline ulong
 strchomp(char *string) {

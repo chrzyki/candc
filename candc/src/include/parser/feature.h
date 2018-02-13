@@ -64,6 +64,8 @@ namespace NLP {
       bool is_ng(void) const { return _value == Features::NG; }
       bool is_dcl(void) const { return _value == Features::DCL; }
       bool is_b(void) const { return _value == Features::B; }
+
+      Feature override(const Feature parent) const { return is_free() && parent ? parent : *this; }
     };
 
     inline std::ostream &operator<<(std::ostream &stream, const Feature &f){

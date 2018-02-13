@@ -13,7 +13,7 @@
 // extracts features from named entity tagged training data
 // saves the extracted model into the specified model directory
 // which is then loaded by NLP::MaxEnt::GIS for estimating
-// the parameters of the model, and NLP::Tagger::NER for tagging
+// the parameters of the model, and NLP::Taggers::NER for tagging
 
 namespace NLP {
   namespace Extract {
@@ -31,7 +31,7 @@ namespace NLP {
       NLP::Lexicon lexicon(void) const;	// lexicon produced
 
       // configuration information for extracting the model
-      NER(NLP::Tagger::NER::Config &cfg, const std::string &preface, bool verbose);
+      NER(NLP::Taggers::NER::Config &cfg, const std::string &preface, bool verbose);
       // shared, reference counted copy constructor
       NER(const NER &other);
 

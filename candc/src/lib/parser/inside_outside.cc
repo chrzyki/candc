@@ -129,13 +129,13 @@ InsideOutside::disj_calc_inside(SuperCat *disj){
     d_inside = add_logs(d_inside, conj_calc_inside(conj));
 
   disj->d_inside = d_inside;
-};
+}
   
 void
 InsideOutside::disj_calc_outside(SuperCat *disj, double invZ){
   for(SuperCat *conj = disj; conj; conj = conj->next)
     conj_calc_outside(conj, disj->outside, invZ);
-};
+}
 
 double
 InsideOutside::calc_inside(Chart &chart){

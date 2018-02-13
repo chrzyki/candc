@@ -25,7 +25,7 @@ namespace NLP {
 
       uchar value(void) const { return _value; }
 
-      operator void *(void) const { return (void *)static_cast<uint>(_value); }
+      operator void *(void) const { return (void *)static_cast<size_t>(_value); }
       bool operator !(void) const { return _value == 0; }
       Fixed &operator++(void){ ++_value; return *this; }
       operator uchar(void) const { return _value; }

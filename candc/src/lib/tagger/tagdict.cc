@@ -27,7 +27,7 @@
 using namespace std;
 using namespace NLP::HashTable;
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 static Tags EMPTY;
 

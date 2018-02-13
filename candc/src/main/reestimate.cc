@@ -11,6 +11,8 @@
 
 #include "base.h"
 
+#include "cluster.h"
+
 #include "prob.h"
 
 #include "config/config.h"
@@ -32,6 +34,7 @@
 #include "maxent/context.h"
 #include "maxent/gis.h"
 #include "maxent/bfgs.h"
+#include "maxent/perceptron.h"
 
 #include "timer.h"
 
@@ -51,7 +54,7 @@ run(int argc, char **argv){
 
   Config::Op<bool> verbose(cfg, "verbose", "print information about training on stderr", false);
 
-  Model::Config model_cfg("new", "the existing model directory", 0, Model::Config::ESTIMATE, 0.707, 200);
+  Model::Config model_cfg("new", "the existing model directory", 0, Model::Config::ESTIMATE, 1.414, 200);
 
   Config::Alias model_alias(cfg, model_cfg, "model", model_cfg.NAME);
 
@@ -74,11 +77,14 @@ run(int argc, char **argv){
 
   Timer timer("total");
 
+  NLP::Cluster::init(argc, argv, false);
   MaxEnt::GIS *solver = 0;
   if(model_cfg.model.solver() == "gis")
     solver = new MaxEnt::GIS(model_cfg.model, verbose());
   else if(model_cfg.model.solver() == "bfgs")
     solver = new MaxEnt::BFGS(model_cfg.model, verbose());
+  else if(model_cfg.model.solver() == "perceptron")
+    solver = new MaxEnt::Perceptron(model_cfg.model, verbose());
   else
     assert(!"unknown MaxEnt solver should have been caught!");
 

@@ -1,0 +1,8 @@
+\contentsline {section}{\numberline {1}Tokenisation}{3}
+\contentsline {section}{\numberline {2}Part-of-speech tagging}{5}
+\contentsline {paragraph}{Ambiguity}{5}
+\contentsline {paragraph}{Tagset}{6}
+\contentsline {section}{\numberline {3}Named entity recognition}{8}
+\contentsline {section}{\numberline {4}Syntax}{10}
+\contentsline {section}{\numberline {5}Semantics}{12}
+\contentsline {section}{\numberline {6}Inference}{14}

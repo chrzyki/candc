@@ -32,6 +32,8 @@
 #include "model/attributes.h"
 #include "model/registry.h"
 
+#include "cluster.h"
+
 #include "share.h"
 
 using namespace std;
@@ -52,7 +54,7 @@ public:
   _Impl(const std::string &name): _ImplBase(name){}
   virtual ~_Impl(void) {}
 
-  void reg(const Type &type, Attributes &attribs){
+  void reg(const Type &type, Attributes *attribs){
     Entry *e = _ImplBase::find(type.id);
     if(e){
       string id = type.id;
@@ -60,7 +62,7 @@ public:
     }
     e = _ImplBase::add(type.id);
     e->value.type = type;
-    e->value.attribs = &attribs;
+    e->value.attribs = attribs;
   }
 
   Entry *find(const std::string &txt) const {
@@ -101,12 +103,22 @@ Registry::size(void) const {
 
 void
 Registry::reg(const Type &type, Attributes &attribs){
-  _impl->reg(type, attribs);
+  _impl->reg(type, &attribs);
+}
+
+void
+Registry::reg(const Type &type){
+  _impl->reg(type, 0);
 }
 
 Attributes &
 Registry::get(const std::string &txt){
   return *_impl->find(txt)->value.attribs;
+}
+
+const char *
+Registry::canonize(const std::string &txt) const{
+  return _impl->find(txt)->value.type.id;
 }
 
 Attribute &

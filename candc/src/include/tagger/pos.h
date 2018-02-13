@@ -16,7 +16,7 @@
 //   a single input sentence interface
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     class POS: public Tagger {
     public:

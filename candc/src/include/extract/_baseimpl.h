@@ -13,14 +13,17 @@
 // extracts features from POS tagged training data
 // saves the extracted model into the specified model directory
 // which is then loaded by NLP::MaxEnt::GIS for estimating
-// the parameters of the model, and NLP::Tagger::POS for tagging
+// the parameters of the model, and NLP::Taggers::POS for tagging
 
 #include "base.h"
+
+#include "cluster.h"
 
 #include "config/config.h"
 
 #include "model/types.h"
 #include "model/model.h"
+#include "model/registry.h"
 
 #include "io/reader.h"
 #include "io/writer.h"
@@ -32,6 +35,7 @@
 #include "extract/feature.h"
 #include "extract/contexts.h"
 #include "extract/attributes.h"
+
 #include "timer.h"
 #include "share.h"
 
@@ -40,46 +44,64 @@ namespace NLP { namespace Extract {
 // private implementation, which is shared
 class _BaseImpl: public Shared {
 protected:
+  virtual void reg_types(void);
+
   virtual void _generate_counts(const NLP::Sentence &sent) = 0;
   virtual void _generate_features(const NLP::Sentence &sent) = 0;
   virtual void _generate_contexts(const NLP::Sentence &sent) = 0;
   virtual void _apply_cutoffs(void) = 0;
   virtual void _make_unknowns(void) const = 0;
- 
-  virtual void _pass1(NLP::IO::Reader &reader);
+
+  virtual void _pass1(NLP::IO::Reader &reader, bool save_klasses = true);
   virtual void _pass2(NLP::IO::Reader &reader);
+  virtual void _pass2_postload(NLP::IO::Reader &) { }
   virtual void _pass3(NLP::IO::Reader &reader);
   virtual void _save_contexts(void);
 public:
   template <class This, class Fn>
   void _apply(NLP::IO::Reader &reader, const std::string &msg, This th, Fn fn){
     reader.reset();
-  
+
     NLP::Sentence sent;
+
+    // determine the number of sentences for MPI
+    ulong total_sents;
+    if(Cluster::USE_MPI){
+      for(total_sents = 0; reader.next(sent); total_sents++)
+	;
+      reader.reset();
+    }
 
     nevents = 0;
     // loop over the sentences in the training data
     const ulong LOG_INTERVAL = 100000;
     ulong next_log = LOG_INTERVAL;
+    ulong cur_sent = 0;
     while(reader.next(sent)){
-      (th->*fn)(sent);
-      if(VERBOSE && nevents >= next_log){
-	std::cerr << msg << ": " << next_log << " events" << std::endl;
-	next_log += LOG_INTERVAL;
+      if(!Cluster::USE_MPI || !cfg.model.split_input() || cur_sent % Cluster::size == Cluster::rank)
+        (th->*fn)(sent);
+      cur_sent++;
+      if(VERBOSE && Cluster::rank == 0 && nevents >= next_log){
+        std::cerr << msg << ": " << next_log << " events" << std::endl;
+        next_log += LOG_INTERVAL;
       }
     }
-    if(VERBOSE)
+    if(VERBOSE && Cluster::rank == 0)
       std::cerr << msg << ": " << nevents << " events" << std::endl;
   }
 
   NLP::Model::Config &cfg;
-  const bool VERBOSE;
   std::string PREFACE;
+  const bool VERBOSE;
+  const bool MERGE;
+  const bool SORT;
 
   const std::string NONE;
 
   ulong nevents;
   ulong ncontexts;
+
+  NLP::Model::Registry registry;
 
   NLP::Lexicon lexicon;
   NLP::TagSet klasses;

@@ -11,6 +11,8 @@
 #include "base.h"
 #include "timer.h"
 
+#include "cluster.h"
+
 using namespace std;
 using namespace NLP::Port;
 
@@ -35,6 +37,9 @@ public:
     Time end_usr, end_sys, end_total;
 
     gettimes(end_usr, end_sys, end_total);
+
+    if(NLP::Cluster::rank != 0)
+      return;
 
     cerr.setf(ios::fixed, ios::floatfield);
     cerr << _msg << ' ';

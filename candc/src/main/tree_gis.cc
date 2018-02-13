@@ -8,17 +8,7 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-#include <mpi.h>
-
-#include <cassert>
-#include <cmath>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <limits>
-#include <valarray>
+#include "std.h"
 
 using namespace std;
 
@@ -34,8 +24,6 @@ using namespace std;
 #include "tree/bfgs.h"
 #include "tree/perceptron.h"
 
-#include "cluster.h"
-
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -47,7 +35,7 @@ namespace Cluster = NLP::Cluster;
 
 int
 main(int argc, char* argv[]){
-  Cluster::init(argc, argv);
+  Cluster::init(argc, argv, true);
   
   ostringstream out;
   out << "tree_gis " << Cluster::rank << " of " << Cluster::size;

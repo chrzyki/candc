@@ -1,0 +1,51 @@
+
+:- module(morpha,[morpha/2]).
+:- use_module(library(lists),[append/3,select/3]).
+
+/* -------------------------------------------------------------------------
+   Pre-Processing of CCG derivation to ensure correct format
+------------------------------------------------------------------------- */
+
+morpha(Tags1,[pos:Pos,lemma:New|Tags3]):-
+   select(pos:Pos,Tags1,Tags2),
+   select(lemma:Lem,Tags2,Tags3), !,
+   morpha(Pos,Lem,New).
+
+morpha(Tags,Tags).
+
+/* -------------------------------------------------------------------------
+   Morphological Rules (+POS,+Old,-New)
+------------------------------------------------------------------------- */
+
+morpha(_,'n\'t',not):- !.
+morpha(_, '\'t',not):- !.
+
+morpha('NN','%',percent):- !.
+
+morpha('JJR',better, good):- !.
+morpha('JJS',best,   good):- !.
+morpha('JJR',worse,   bad):- !.
+morpha('JJS',worst,   bad):- !.
+morpha('JJR',farther, far):- !.
+morpha('JJR',further, far):- !.
+morpha('JJS',farthest,far):- !.
+morpha('JJS',furthest,far):- !.
+
+morpha('VBP','\'s', be):- !.
+morpha('VBZ','\'s', be):- !.
+morpha('VBP','\'m', be):- !.
+morpha('VBZ','\'m', be):- !.
+morpha('VBP','\'re',be):- !.
+morpha('VBZ','\'re',be):- !.
+
+morpha('JJR',Lemma1,Lemma2):- name(Lemma1,Codes1), append(Codes3,"ier", Codes1), !, append(Codes3,"y",Codes2), name(Lemma2,Codes2).
+morpha('JJR',Lemma1,Lemma2):- name(Lemma1,Codes1), append(Codes3,"tter",Codes1), !, append(Codes3,"t",Codes2), name(Lemma2,Codes2).
+morpha('JJR',Lemma1,Lemma2):- name(Lemma1,Codes1), append(Codes3,"gger",Codes1), !, append(Codes3,"g",Codes2), name(Lemma2,Codes2).
+morpha('JJR',Lemma1,Lemma2):- name(Lemma1,Codes1), append(Codes3,"dder",Codes1), !, append(Codes3,"d",Codes2), name(Lemma2,Codes2).
+morpha('JJR',Lemma1,Lemma2):- name(Lemma1,Codes1), append(Codes2,"er",  Codes1), !,                            name(Lemma2,Codes2).
+
+morpha('RB', Lemma1,Lemma2):- name(Lemma1,Codes1), append(Codes2,"ly",Codes1), !, name(Lemma2,Codes2).
+
+morpha(_,X,X).
+
+

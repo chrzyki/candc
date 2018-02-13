@@ -22,11 +22,11 @@
 #include "wordtype.h"
 #include "tagger/unigram.h"
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 NER::Config::Config(const OpPath *base, Mode mode,
 		    const std::string &name, const std::string &desc)
-  : Tagger::Config(name, desc, base, mode, 0.707, 400),
+  : Tagger::Config(name, desc, base, mode, 1.414, 400),
     postags(*this, "postags", "the POS tag set", "//postags", &path),
     chunktags(*this, "chunktags", "the chunk tag set", "//chunktags", &path),
     gazetteers(*this, "gazetteers", "the gazetteer configuration file", "//gazetteers", &path),
@@ -579,12 +579,12 @@ NER::Impl::add_features(const State &state, ulong i, PDF &pdf) const {
 
 void
 NER::Impl::unpack_tags(State &state, Sentence &sent) const {
-  _unpack_tags(state, sent.entities, true);
+  _unpack_tags(state, sent.entities, types.use_last());
 }
 
 void
 NER::Impl::unpack_mtags(State &state, Sentence &sent, const double BETA) const {
-  _unpack_mtags(state, sent.mentities, BETA, true);
+  _unpack_mtags(state, sent.mentities, BETA, types.use_last());
 }
 
 NER::NER(NER::Config &cfg): Tagger(cfg, new Impl(cfg)){}

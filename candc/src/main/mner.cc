@@ -18,5 +18,5 @@ const char *PROGRAM_NAME = "mner";
 
 int
 run(int argc, char **argv){
-  return run_tag<Tagger::NER>(true, 5, 0.1, "%w|%p \n", "%w\t%p\t%N\n\n\n", argc, argv);
+  return run_tag<Taggers::NER>(true, 5, 0.1, "%w|%p \n", "%w\t%p\t%N\n\n\n", argc, argv);
 }

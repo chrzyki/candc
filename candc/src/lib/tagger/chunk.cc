@@ -12,7 +12,7 @@
 #include "tagger/tagsetdict.h"
 #include "tagger/chunk.h"
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 Chunk::Config::Config(const OpPath *base, Mode mode,
 		      const std::string &name, const std::string &desc)
@@ -91,11 +91,11 @@ Chunk::Impl::reg_attributes(void){
   registry.reg(Types::nt, nt_attribs);
   registry.reg(Types::nnt, nnt_attribs);
 
-  registry.reg(Types::pptptb, pptpt_attribs);
-  registry.reg(Types::pttb, ptt_attribs);
-  registry.reg(Types::ptntb, ptnt_attribs);
-  registry.reg(Types::tntb, tnt_attribs);
-  registry.reg(Types::ntnntb, ntnnt_attribs);
+  registry.reg(Types::ppt_pt_b, pptpt_attribs);
+  registry.reg(Types::pt_t_b, ptt_attribs);
+  registry.reg(Types::pt_nt_b, ptnt_attribs);
+  registry.reg(Types::t_nt_b, tnt_attribs);
+  registry.reg(Types::nt_nnt_b, ntnnt_attribs);
 
   registry.reg(Types::pst, pk_attribs);
   registry.reg(Types::ppst, ppkpk_attribs);

@@ -8,47 +8,13 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-////////////////////////////////////////////////////////////////////////////
-//
-// This file is part of the C&C NLP software package.
-//   
-// C&C is free software; you can redistribute it and/or modify it
-// under the terms of the GNU General Public License as published by the
-// Free Software Foundation; either version 2 of the License, or (at your
-// option) any later version.
-//
-// C&C is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with C&C; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
-///////////////////////////////////////////////////////////////////////////
-
-#include <mpi.h>
-
-#include <cmath>
-#include <string>
-#include <vector>
+#include "std.h"
 #include <deque>
-#include <valarray>
-#include <numeric>
-#include <limits>
-
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
-#include <stdexcept>
-
-#include <fpu_control.h>
 
 using namespace std;
 
 #include "timer.h"
+#include "port.h"
 
 #include "except.h"
 #include "tree/options.h"
@@ -57,8 +23,6 @@ using namespace std;
 #include "tree/forest.h"
 #include "tree/gis.h"
 #include "tree/bfgs.h"
-
-#include "cluster.h"
 
 typedef std::valarray<double> doubles;
 
@@ -122,8 +86,7 @@ public:
       EPSILON(epsilon), NVARIABLES(nvars), NHISTORY(nhistory), func(func),
       grad(NVARIABLES), old_grad(NVARIABLES), diff_grad(NVARIABLES), dir(NVARIABLES),
       alpha(NHISTORY), is_beginning(true), has_converged(false), value(0.0), niterations(0) {
-    fpu_control_t cw = 0x1372;
-    _FPU_SETCW(cw);
+    NLP::Port::setup_fpu();
   }
 
   ~_Solver(void) {}
@@ -456,8 +419,7 @@ BFGS::llhood(void){
   if(Cluster::rank == 0)
     cout << ", red" << flush;
 
-  memset(&global[0], 0, sizeof(double)*global.size());
-  MPI::COMM_WORLD.Allreduce(&local[0], &global[0], op.nfeatures + 1, MPI::DOUBLE, MPI::SUM);
+  Cluster::sum(&local[0], &global[0], op.nfeatures + 1);
 
   if(Cluster::rank == 0)
     cout << ", cp" << flush;
@@ -471,17 +433,13 @@ BFGS::llhood(void){
     //sc: just give this some value
     local[op.nfeatures] = 0;
     
-    memset(&global[0], 0, sizeof(double)*global.size());
-    MPI::COMM_WORLD.Allreduce(&local[0], &global[0], op.nfeatures + 1, MPI::DOUBLE, MPI::SUM);
+
+    Cluster::sum(&local[0], &global[0], op.nfeatures + 1);
 
     for(ulong i = 0; i < op.nfeatures; ++i){
-
       features[i].emp = global[i];
-
       //cout << i << " emp: " << features[i].emp << " est: " << features[i].est << endl;
-      
     }
-
   }
 
   return llhood;

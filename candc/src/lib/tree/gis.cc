@@ -8,37 +8,7 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-///////////////////////////////////////////////////////////////////////////
-//
-// This file is part of the C&C NLP software package.
-//   
-// C&C is free software; you can redistribute it and/or modify it
-// under the terms of the GNU General Public License as published by the
-// Free Software Foundation; either version 2 of the License, or (at your
-// option) any later version.
-//
-// C&C is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with C&C; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-//
-///////////////////////////////////////////////////////////////////////////
-
-#include <mpi.h>
-
-#include <cassert>
-#include <cmath>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <sstream>
+#include "std.h"
 
 using namespace std;
 
@@ -56,8 +26,6 @@ using namespace std;
 #include "tree/node.h"
 #include "tree/forest.h"
 #include "tree/gis.h"
-
-#include "cluster.h"
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -103,8 +71,7 @@ void GIS::_calc_emp(){
     //out << "calculated local emp on " << Cluster::processor << " pid " << getpid() << '\n';
     //cerr << out.str();
 
-    memset(global_est, 0, sizeof(double)*op.nfeatures);
-    MPI::COMM_WORLD.Allreduce(local_est, global_est, op.nfeatures, MPI::DOUBLE, MPI::SUM);
+    Cluster::sum(local_est, global_est, op.nfeatures);
 
     for(ulong i = 0; i < features.size(); ++i)
       features[i].emp = global_est[i];
@@ -155,9 +122,9 @@ void GIS::_read_forests(void) {
   ulong nlines = 0;
   forests.reserve(op.nsentences);
   nforests = 0;
-  long local_nforests = 0;
-  long local_nread = 0;
-  long local_nreject = 0;
+  ulong nforests = 0;
+  ulong nread = 0;
+  ulong nreject = 0;
 
   const string filename = op.base + '.' + Cluster::rank_str + ".out";
   ifstream in(filename.c_str());
@@ -171,24 +138,24 @@ void GIS::_read_forests(void) {
   while(in >> sentence){
     Forest *forest = new Forest(in, features);
     if(op.norm_form){
-      local_nread++;
+      nread++;
       if(forest->check_deriv(features)){
-	forests.push_back(forest);
-	local_nforests++;
-	forest->feat_counts();
+        forests.push_back(forest);
+        nforests++;
+        forest->feat_counts();
       }else{
-	delete forest;
-	local_nreject++;
+        delete forest;
+        nreject++;
       }
     }else{
-      local_nread++;
+      nread++;
       double correct_derivs = forest->count_correct();
       if(correct_derivs != -1.0){
-	forests.push_back(forest);
-	local_nforests++;
+        forests.push_back(forest);
+        nforests++;
       }else{
-	delete forest;
-	local_nreject++;
+        delete forest;
+        nreject++;
       }
     }
   }
@@ -196,13 +163,13 @@ void GIS::_read_forests(void) {
     throw NLP::IOException("error reading in forest", filename);
 
   ostringstream out;
-  out << "calculated local forest count: " << local_nforests
+  out << "calculated local forest count: " << nforests
       << " on " << Cluster::processor << " pid " << getpid() << '\n';
   cerr << out.str();  
 
-  MPI::COMM_WORLD.Allreduce(&local_nforests, &nforests, 1, MPI::LONG, MPI::SUM);
-  MPI::COMM_WORLD.Allreduce(&local_nreject, &nreject, 1, MPI::LONG, MPI::SUM);
-  MPI::COMM_WORLD.Allreduce(&local_nread, &nread, 1, MPI::LONG, MPI::SUM);
+  Cluster::sum(nforests);
+  Cluster::sum(nreject);
+  Cluster::sum(nread);
   if(Cluster::rank == 0){
     out.str("");
     out << "total number of forests: " << nforests << endl;
@@ -217,11 +184,9 @@ void GIS::_calc_correction(void) {
   for(Forests::iterator forest = forests.begin(); forest != forests.end(); ++forest)
     max_active = max(max_active, (*forest)->max_active());
 
-  ulong global_max_active = 0;
+  Cluster::max(max_active);
 
-  MPI::COMM_WORLD.Allreduce(&max_active, &global_max_active, 1, MPI::UNSIGNED_LONG, MPI::MAX);
-
-  C = global_max_active;
+  C = max_active;
   invC = 1.0/static_cast<double>(C);
 }
 
@@ -258,8 +223,7 @@ void GIS::_reduce_counts(void){
   for(ulong i = 0; i < features.size(); ++i)
     local_est[i] = features[i].est;
 
-  memset(global_est, 0, sizeof(double)*op.nfeatures);
-  MPI::COMM_WORLD.Allreduce(local_est, global_est, op.nfeatures, MPI::DOUBLE, MPI::SUM);
+  Cluster::sum(local_est, global_est, op.nfeatures);
 
   for(ulong i = 0;  i < op.nfeatures; ++i)
     if(features[i].emp > global_est[i])
@@ -287,23 +251,23 @@ void GIS::iterate(void) {
       double Z = forests[i]->inside(op.norm_form);
       forests[i]->outside(-Z, op.norm_form);
       if(op.norm_form)
-	llhood += forests[i]->llhood(true);
+        llhood += forests[i]->llhood(true);
       else
-	llhood += forests[i]->llhood(false);
+        llhood += forests[i]->llhood(false);
     }
 
-    double total_llhood = 0.0;
-    MPI::COMM_WORLD.Allreduce(&llhood, &total_llhood, 1, MPI::DOUBLE, MPI::SUM);
+    Cluster::sum(llhood);
+
     if(Cluster::rank == 0)
-      cout << ", llhood = " << total_llhood;
+      cout << ", llhood = " << llhood;
 
     if(Cluster::rank == 0)
       cout << ", reduce" << flush;
 
     for(ulong i = 0; i < op.nfeatures; ++i)
       local_est[i] = features[i].est;
-    memset(global_est, 0, op.nfeatures*sizeof(double));
-    MPI::COMM_WORLD.Allreduce(local_est, global_est, op.nfeatures, MPI::DOUBLE, MPI::SUM);
+
+    Cluster::sum(local_est, global_est, op.nfeatures);
 
     if(Cluster::rank == 0)
       cout << ", updating" << flush;
@@ -319,8 +283,8 @@ void GIS::iterate(void) {
     }
     if(Cluster::rank == 0){
       if(niterations % 1 == 0){
-	cout << ", saving" << flush;
-	save(niterations);
+        cout << ", saving" << flush;
+        save(niterations);
       }
 
       cout << ", done" << endl;
@@ -400,9 +364,8 @@ void GIS::save(long iteration) {
 void
 GIS::stats(void){
   double usage = Port::get_usage()/1024.0*1024.0;
-  double total_usage = 0.0;
 
-  MPI::COMM_WORLD.Allreduce(&usage, &total_usage, 1, MPI::DOUBLE, MPI::SUM);
+  Cluster::sum(usage);
   if(Cluster::rank == 0){
     const string filename = op.model + "/stats";
     ofstream out(filename.c_str());
@@ -410,7 +373,7 @@ GIS::stats(void){
       throw NLP::IOException("could not open weights file for writing", filename);
 
     out << "number of iterations = " << niterations << endl;
-    out << "memory usage = " << total_usage << endl;
+    out << "memory usage = " << usage << endl;
     out << "CPU time = " << watch.stop() << endl;
   }
 }

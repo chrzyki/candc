@@ -81,6 +81,12 @@ namespace NLP {
     void save(const std::string &filename, const std::string &preface) const;
     void save(std::ostream &stream, const std::string &preface) const;
 
+    // merge lexicons across a cluster
+    void merge(void);
+    
+    // broadcast lexicons across a cluster
+    void bcast(void);
+
     // add strings to the lexicon (when you know they don't already exist)
     // does not check to see if the entry is already there
     void insert(const std::string &str, ulong freq);

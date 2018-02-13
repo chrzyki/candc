@@ -24,7 +24,8 @@ namespace NLP {
       const static ulong BRACKET = 7;
       const static ulong NFLAGS = 8;
 
-      bool EXTRA_RULES;
+      const bool EXTRA_RULES;
+      const bool NOISY_RULES;
 
       Pool *const pool;
       const Markedup &markedup;
@@ -34,8 +35,8 @@ namespace NLP {
       const Cat *const SfS;
       Unify unify;
 
-      Rules(Pool *pool, const Markedup &markedup, const bool EXTRA_RULES)
-	: EXTRA_RULES(EXTRA_RULES),
+      Rules(Pool *pool, const Markedup &markedup, const bool EXTRA_RULES, const bool NOISY_RULES)
+	: EXTRA_RULES(EXTRA_RULES), NOISY_RULES(NOISY_RULES),
 	  pool(pool), markedup(markedup),
 	  SbNPbSbNP(markedup["(S\\NP)\\(S\\NP)"]),
   	  SbNPfSbNP(markedup["(S\\NP)/(S\\NP)"]),
@@ -69,7 +70,8 @@ namespace NLP {
 
       // sc: added Eisner's constraint
       bool forward_app_reject(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf){
-        return sc1->cat->not_fwd() || sc2->conj_or_tr() || (eisner_nf && sc1->fcomp());
+        return sc1->cat->not_fwd() || sc2->conj_or_tr() ||
+	  (eisner_nf && (sc1->fcomp() || sc1->tr()));
       }
 
       bool forward_app(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf, SuperCats &res);
@@ -78,7 +80,8 @@ namespace NLP {
 
       // sc: added Eisner's constraint (note we do allow sc2->bxcomp)
       bool backward_app_reject(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf){
-        return sc2->cat->not_bwd() || sc1->conj_or_tr() || (eisner_nf && sc2->bcomp());
+        return sc2->cat->not_bwd() || sc1->conj_or_tr() ||
+	  (eisner_nf && (sc2->bcomp() || sc2->tr()));
       }
 
       bool backward_app(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf, SuperCats &res);
@@ -110,7 +113,7 @@ namespace NLP {
       bool backward_comp_reject(const SuperCat *sc1, const SuperCat *sc2, const bool eisner_nf){
         return sc1->cat->not_bwd() || sc2->cat->not_bwd() ||
 	  //Eisner's constraint
-	  (eisner_nf && (sc2->bcomp() || sc2->bxcomp())) ||
+	  (eisner_nf && (sc2->bcomp() || sc2->bxcomp() || (sc1->tr() && !sc2->tr()))) ||
 	  sc1->conj() || sc2->conj() || sc2->cat->is_argNorNP();
       }
 
@@ -271,7 +274,7 @@ namespace NLP {
 	switch(sc1->cat->atom){
 	  case Atoms::COMMA:
 	    return cat->is_NorNP() || cat->is_S() || cat->is_SbNP() ||
-	      (EXTRA_RULES && (cat->is_NPbNP() || cat->is_NfN() || cat->is_SbNPbSbNP()));
+	      (EXTRA_RULES && !sc2->conj() && (cat->is_NPbNP() || cat->is_NfN() || cat->is_SbNPbSbNP()));
 	  case Atoms::SEMICOLON:
 	      return cat->is_NP() || cat->is_S() || cat->is_SbNP();
 	  default:

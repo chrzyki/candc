@@ -61,6 +61,6 @@ CCGbankPrinter::derivation(const SuperCat *sc, Sentence &sent){
 }
 
 void
-CCGbankPrinter::lexical(Sentence &sent){}
+CCGbankPrinter::lexical(Sentence &){}
 
 } }

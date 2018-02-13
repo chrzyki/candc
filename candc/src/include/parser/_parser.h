@@ -106,15 +106,19 @@ namespace NLP {
 
       InsideOutside inside_outside;
 
+      Statistics stats;
+
       _Impl(const Config &cfg, Sentence &sent,
 	    Categories &cats, ulong load);
       ~_Impl(void){ delete [] weights; };
 
+      void reset(void);
+
       void combine(Cell &left, Cell &right, long pos, long span);
-      bool parse(double BETA);
+      bool parse(double BETA, bool repair);
 
       bool deps_count(std::ostream &out);
-      double calc_stats(ulong &nequiv, ulong &ntotal);
+      void calc_stats(Statistics &stats);
       bool count_rules(void);
       bool print_forest(InsideOutside &inside_outside, std::ostream &out, ulong id,
 			const std::vector<ulong> &correct, const std::vector<long> &rules);
@@ -127,8 +131,6 @@ namespace NLP {
 				 const Words &words, const Words &tags);
       void print_root_features(InsideOutside &inside_outside, std::ostream &out, const SuperCat *sc,
 			       const Words &words, const Words &tags);
-
-      bool print_data(std::ostream &out, ulong id);
 
       void calc_root_canonical(SuperCat *sc, const Words &words, const Words &tags);
       void calc_score_canonical(SuperCat *sc, const Words &words, const Words &tags);
@@ -151,7 +153,7 @@ namespace NLP {
       void calc_score_leaf(SuperCat *sc, const Words &words, const Words &tags);
       double calc_beam_score_leaf(SuperCat *sc, const Words &words, const Words &tags);
 
-      ulong dependency_marker(const Filled *filled, const Variable *vars) const;
+      ulong dependency_marker(const Filled *filled) const;
 
       ulong get_feature(const std::string &filename, const std::string &line, std::vector<long> &rules) const;
 

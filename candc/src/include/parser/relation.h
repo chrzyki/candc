@@ -12,25 +12,28 @@
 namespace NLP {
   namespace CCG {
 
+    class Cat;
+
     class Relation {
     public:
-      const char *cat;
+      const Cat *cat;
+      const char *cat_str;
       const ulong slot;  // slot number from the markedup file
       const ulong jslot; // slot number using Julia's scheme
       GRTemplate *gr;    // B&C grammatical relation format strings
 
-      Relation(const char *cat, ulong slot, ulong jslot)
-	: cat(cat), slot(slot), jslot(jslot), gr(0){}
+      Relation(const char *cat_str, ulong slot, ulong jslot)
+	: cat(0), cat_str(cat_str), slot(slot), jslot(jslot), gr(0){}
       Relation(const Relation &other)
-	: cat(other.cat), slot(other.slot), jslot(other.jslot),
-	  gr(other.gr){}
+	: cat(other.cat), cat_str(other.cat_str),
+	  slot(other.slot), jslot(other.jslot), gr(other.gr){}
       ~Relation(void){}
 
       void print_slot(std::ostream &out, const bool julia_slots) const {
 	if(julia_slots)
-	  out << cat << ' ' << jslot;
+	  out << cat_str << ' ' << jslot;
 	else
-	  out << cat << ' ' << slot;
+	  out << cat_str << ' ' << slot;
       }
     };
 

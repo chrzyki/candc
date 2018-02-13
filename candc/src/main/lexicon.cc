@@ -1,7 +1,11 @@
 
+const char *PROGRAM_NAME = "lexicon";
+
 #include "base.h"
 #include "huge.h"
 #include "readdir.h"
+
+#include "main.h"
 
 using namespace NLP;
 using namespace std;
@@ -21,19 +25,15 @@ readfile(const char *const filename){
 
   std::string token;
   for( ; in >> token; ++ntokens)
-    lexicon.add(token);
+    lexicon.add(token, 1);
 
   nfiles++;
 
   return true;
 }
 
-char filenamebuf[1024];
-
-DirectoryReader dir;
-
 int
-main(int argc, char **argv){
+run(int argc, char **argv){
   if(argc < 2){
     cerr << "lexicon: not enough arguments\n";
     cerr << "usage: lexicon <files>\n";
@@ -41,15 +41,7 @@ main(int argc, char **argv){
   }
 
   for(int arg = 1; arg < argc; arg++){
-    strcpy(filenamebuf, argv[arg]);
-
-    char *filename = filenamebuf;
-    int len = strlen(filename);
-
-    if(filename[len - 1] == '/')
-      filename[len - 1] = '\0';
-
-    dir.read(filename, &readfile);
+    readfile(argv[arg]);
     cerr << "finished " << argv[arg] << " at " << ntokens << " tokens (cumulative)\n";
   }
 

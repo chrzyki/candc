@@ -36,6 +36,7 @@ public:
   ulong freq;
   Hash hash;
   Tag klass;
+  ulong index;
   Context context;
 
   _ContextEntry(Tag klass, const Context &context, NLP::Hash hash, _ContextEntry *next)
@@ -44,13 +45,13 @@ public:
   ~_ContextEntry(void){}
 
   void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); }
-  void operator delete(void *, Pool *pool) { /* do nothing */ }
+  void operator delete(void *, Pool *) { /* do nothing */ }
 
-  static _ContextEntry *create(Pool *pool, void *,
-			       ulong, NLP::Hash, _ContextEntry *next){ return 0; }
+  static _ContextEntry *create(Pool *, void *,
+			       ulong, NLP::Hash, _ContextEntry *){ return 0; }
 
   bool equal(Tag klass, NLP::Hash hash, const Context &context) const {
-    return klass == this->klass && hash == this->hash & context == this->context;
+    return klass == this->klass && hash == this->hash && context == this->context;
   }
 
   _ContextEntry *find(Tag klass, NLP::Hash hash, const Context &context){
@@ -81,15 +82,23 @@ template <class E>
 class ContextCmp {
 public:
   bool operator ()(const E *const e1, const E *const e2){
+    if(e1->context == e2->context)
+      return e1->klass < e2->klass;
     return e1->context < e2->context;
   }
 };
 
 class Contexts::_Impl: public _ImplBase, public Shared {
 public:
+  const bool MERGE;
+  const bool SORT;
   string PREFACE;
 
-  _Impl(const string &name): _ImplBase(name){}
+  _Impl(const string &name, bool MERGE, bool SORT):
+    _ImplBase(name),
+    MERGE(MERGE),
+    SORT(SORT){}
+
   virtual ~_Impl(void){
     for(Entries::iterator i = entries.begin(); i != entries.end(); ++i)
       (*i)->~Entry();
@@ -98,13 +107,16 @@ public:
   void add(Tag klass, const Context &context){
     NLP::Hash hash = Entry::calc_hash(klass, context);
     ulong bucket = hash % NBUCKETS_;
-    Entry *entry = buckets_[bucket]->find(klass, hash, context);
-    if(entry){
-      entry->freq++;
-      return;
+
+    if(MERGE){
+      Entry *entry = buckets_[bucket]->find(klass, hash, context);
+      if(entry){
+        entry->freq++;
+        return;
+      }
     }
 
-    entry = new (pool_) Entry(klass, context, hash, buckets_[bucket]);
+    Entry *entry = new (pool_) Entry(klass, context, hash, buckets_[bucket]);
     buckets_[bucket] = entry;
     entries.push_back(entry);
     ++size;
@@ -115,13 +127,16 @@ public:
   }
 
   void save(ostream &out){
+  	if(SORT)
+  		sort_by_attributes();
+
     for(Entries::const_iterator i = entries.begin(); i != entries.end(); ++i)
       (*i)->save(out) << '\n';
   }
 };
 
-Contexts::Contexts(void):
-  _impl(new _Impl("contexts")), PREFACE(_impl->PREFACE){}
+Contexts::Contexts(bool MERGE, bool SORT):
+  _impl(new _Impl("contexts", MERGE, SORT)), PREFACE(_impl->PREFACE){}
 
 Contexts::Contexts(const Contexts &other):
   _impl(share(other._impl)), PREFACE(_impl->PREFACE){}
@@ -149,7 +164,7 @@ void
 Contexts::save(const string &filename, const string &preface) const {
   ofstream stream(filename.c_str());
   if(!stream)
-    throw IOException("could not open " + _impl->name + " file for writing", filename);
+    throw IOException("could not open " + _impl->name + " file for writing from contexts", filename);
 
   stream << preface << endl;
 

@@ -31,6 +31,8 @@
 #include "hashtable/base.h"
 #include "hashtable/ordered.h"
 
+#include "cluster.h"
+
 #include "share.h"
 
 using namespace std;
@@ -54,6 +56,7 @@ public:
   }
   virtual ~Impl_(void) {}
 
+  using ImplBase::insert;
   void insert(const string &word, ulong freq){
     ImplBase::insert(word)->value = freq;
   }
@@ -61,6 +64,10 @@ public:
   using ImplBase::add;
   void add(const string &word, ulong freq){
     ImplBase::add(word)->value += freq;
+  }
+
+  void update(const char *word, ulong freq){
+    ImplBase::add(word)->value = freq;
   }
 
   void load(const string &filename, const bool ADD){
@@ -76,15 +83,70 @@ public:
     while(stream >> word >> freq){
       ++nlines;
       if(stream.get() != '\n')
-	throw IOException("expected newline after frequency in lexicon file", filename, nlines);
+        throw IOException("expected newline after frequency in lexicon file", filename, nlines);
       if(ADD)
-	add(word, freq);
+        add(word, freq);
       else
-	insert(word, freq);
+        insert(word, freq);
     }
 
     if(!stream.eof())
       throw IOException("could not parse word or frequency information", filename, nlines);
+  }
+
+  static void map_load(int, Cluster::KeyValue *kv, void *ptr){
+    Lexicon::Impl_ *impl = reinterpret_cast<Lexicon::Impl_ *>(ptr);
+
+    for(ulong i = 0; i != impl->entries.size(); ++i){
+      Entry *e = impl->entries[i];
+      if(!e)
+	      continue;
+	    kv->add(e->str, e->value);
+    }
+  }
+
+  static void reduce_sum(char *key, int keybytes, char *multivalue,
+               int nvalues, int *, Cluster::KeyValue *kv, void *){
+    const ulong *counts = reinterpret_cast<ulong *>(multivalue);
+    ulong total = 0;
+    for(int i = 0; i != nvalues; ++i)
+      total += counts[i];
+    kv->add(key, keybytes, total);
+  }
+
+  static void map_update(int, char *key, int, char *value,
+                  int, Cluster::KeyValue *, void *ptr){
+    Lexicon::Impl_ *impl = reinterpret_cast<Lexicon::Impl_ *>(ptr);
+    ulong count = *reinterpret_cast<ulong *>(value);
+    impl->update(key, count);
+  }
+
+  void merge(void);
+
+  void pack(Cluster::Counts &counts){
+    for(ulong i = 0; i != entries.size(); ++i){
+      Entry *e = entries[i];
+      if(!e)
+	      continue;
+	    counts.push_back(make_pair(e->str, e->value));
+    }
+  }
+
+  void unpack(Cluster::Counts &counts){
+    clear();
+    for(Cluster::Counts::iterator i = counts.begin(); i != counts.end(); ++i)
+      add(i->first, i->second);
+  }
+ 
+  void bcast(void){
+    if(!Cluster::USE_MPI)
+      return;
+    Cluster::Counts counts;
+    if(Cluster::rank == 0)
+      pack(counts);
+    Cluster::bcast(counts);
+    if(Cluster::rank != 0)
+      unpack(counts);
   }
 
   // remove entries less than freq and then call HashTable::Count::compress
@@ -108,6 +170,21 @@ public:
     entries.resize(0);
   }
 };
+
+void
+Lexicon::Impl_::merge(void){
+  if(Cluster::size == 1)
+    return;
+
+  Cluster::MapReduce mr;
+
+  mr.map(Cluster::size, map_load, this);
+
+  mr.collate();
+  mr.reduce(reduce_sum, 0);
+  mr.gather(1);
+  mr.map(mr.kv(), map_update, this);
+}
 
 Lexicon::Lexicon(const string &name)
   : impl_(new Impl_(name)), PREFACE(impl_->PREFACE){}
@@ -156,7 +233,7 @@ void
 Lexicon::save(const string &filename, const string &preface) const {
   ofstream stream(filename.c_str());
   if(!stream)
-    throw IOException("could not open " + impl_->name + " file for writing", filename);
+    throw IOException("could not open " + impl_->name + " file for writing from lexicon", filename);
 
   save(stream, preface);
 }
@@ -166,6 +243,16 @@ Lexicon::save(ostream &stream, const string &preface) const {
   stream << preface << endl;
 
   impl_->save(stream);
+}
+
+void
+Lexicon::merge(void){
+  impl_->merge();
+}
+
+void
+Lexicon::bcast(void){
+  impl_->bcast();
 }
 
 Word

@@ -22,7 +22,7 @@ Decoder::best_equiv(const SuperCat *sc){
     return sc->max;
 
   const SuperCat *max_sc = 0;
-  double max_score = -numeric_limits<double>::max();
+  volatile double max_score = -numeric_limits<double>::max();
 
   for(const SuperCat *equiv = sc; equiv; equiv = equiv->next){
     double current = best_score(equiv);

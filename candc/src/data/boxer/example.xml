@@ -1,0 +1,81 @@
+
+% e
+  <base val="e"/>
+
+% <e,t>
+  <type>
+    <base val="e"/>
+    <base val="t"/>
+  </type>    
+
+% <<e,t>,t>
+ <type>
+  <type>
+    <base val="e"/>
+    <base val="t"/>
+  </type>    
+  <base val="t"/>
+ </type>
+
+% drs([x,e],[man(x),walk(e),agent(e,x)])
+
+ <sem>
+   <base val="t">
+   <drs>
+     <tokens>
+       <token>A<token>
+       <token>man<token>
+       <token>walks<token>
+       <token>.<token>
+     </tokens>
+     <dom>
+       <ref name="x"></ref>
+       <ref name="e"></ref>
+     </dom>
+     <con>
+       <pred arg="x" sym="man" type="n" sense="3234234"/>
+       <pred arg="e" sym="walk" type="v" sense="6234234"/>
+       <rel int="e" ext="x" sym="agent" sense="6234234"/>
+     </con>
+   </drs>
+ </sem>
+
+% lam(P,merge(drs([x],[man(x)]),app(P,x)))
+
+ <sem>
+   <type><type><base val="e"/><base val="t"/></type><base val="t"/></type>
+   <lam>
+     <var>
+       <type><base val="e"/><base val="t"/></type>
+       <name>P</name>
+     </var>
+     <sem>
+      <merge>
+       <drs>
+         <tokens>
+           <token>A<token>
+           <token>man<token>
+         </tokens>
+         <dom>
+           <ref>x</ref>
+         </dom>
+         <con>
+           <pred arg="x" sym="man" type="n" sense="3234234"/>
+         </con>
+       </drs>
+       <app>
+         <var>
+           <type><base val="e"/><base val="t"/></type>
+           <name>P</name>
+         </var>
+         <var>
+           <base val="e"/>
+           <name>x</name>
+         </var>
+       </app>
+      </merge>
+     </sem>
+   </lam>
+ </sem>
+
+

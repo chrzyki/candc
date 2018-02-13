@@ -56,7 +56,7 @@ namespace NLP {
     private:
       SuperCat(Pool *pool, Position pos, const Cat *cat, SCatFlags flags);
 
-      SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
+      SuperCat(Pool *pool, const Cat *cat, SCatFlags flags, uchar depth,
                const SuperCat *left, const SuperCat *right, Unify &unify);
 
       SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
@@ -88,6 +88,11 @@ namespace NLP {
       const uchar nactive;
       Variable *vars;
 
+      const Feature feature;
+      const uchar depth;
+			const Position pos;
+			const Position span;
+
       const SuperCat *left;
       const SuperCat *right;
 
@@ -103,7 +108,7 @@ namespace NLP {
       
       static SuperCat *Lexical(Pool *pool, Position pos, const Cat *cat, SCatFlags flags);
 
-      static SuperCat *Rule(Pool *pool, const Cat *cat, SCatFlags flags,
+      static SuperCat *Rule(Pool *pool, const Cat *cat, SCatFlags flags, uchar depth,
 			    const SuperCat *left, const SuperCat *right, Unify &unify);
 
       static SuperCat *Conj(Pool *pool, const Cat *cat, SCatFlags flags,
@@ -133,7 +138,7 @@ namespace NLP {
       ~SuperCat(void) { /* do nothing */ }
 
       void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); }
-      void operator delete(void *, Pool *pool) { /* do nothing */ }
+      void operator delete(void *, Pool *) { /* do nothing */ }
 
       bool conj(void) const { return flags & CONJ; }
       bool tr(void) const { return flags & TR; }
@@ -169,8 +174,11 @@ namespace NLP {
       void print_filled(std::ostream &out, const Markedup &markedup, const Relations &rels,
 			const Raws &heads, const Raws &words, bool julia_slots) const;
 
-      void get_grs(GRs &grs, const Markedup &markedup, const Relations &rels,
+      void get_grs(GRs &grs, const Relations &rels,
 		   FilledDeps &seen, const Sentence &sent) const;
+
+      void get_filled(GRs &deps, const Relations &rels,
+		      const Sentence &sent, bool julia_slots) const;
 
       void print_filled_words(std::ostream &out, char type, const Raws &words, const Raws &tags) const;
       void print_filled_verbs(std::ostream &out, char type, const Raws &words, const Raws &tags) const;
@@ -180,6 +188,8 @@ namespace NLP {
 
       std::ostream &lex_info(std::ostream &stream) const;
       std::ostream &conj_info(std::ostream &stream) const;
+
+      std::ostream &out_boxer(std::ostream &stream, Feature unified) const;
 
       void mark_active(void) const { marker = MARK_ACTIVE; }
       void mark_visited(void) const { marker = MARK_VISITED; }
@@ -270,7 +280,7 @@ namespace NLP {
     }
 
     inline std::ostream &operator <<(std::ostream &stream, const SuperCat &sc){
-      stream << *sc.cat << ' ' << sc.flags2str() << std::endl;
+      stream << *sc.cat << ' ' << sc.flags2str() << " nactive: " << (int)sc.nactive << " nvars: " << (int)sc.nvars << std::endl;
       for(VarID i = 1; i < sc.nvars; ++i)
         if(i < sc.nactive)
           stream << "active   " << i << " " << sc.vars[i] << std::endl;
@@ -291,5 +301,8 @@ namespace NLP {
     bool equivalent(const SuperCat *sc1, const SuperCat *sc2);
 
     typedef std::vector<SuperCat *> SuperCats;
+
+    std::string
+    equivalent_explain(const SuperCat *sc1, const SuperCat *sc2);
   }
 }

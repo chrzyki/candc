@@ -1,5 +1,3 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-
 <!ELEMENT xfdrs-output (xfdrs+)>
 <!ATTLIST xfdrs-output  
           version CDATA #REQUIRED >
@@ -29,7 +27,7 @@
           pos CDATA #REQUIRED >
 
 
-<!ELEMENT cons ((drs|alfa|merge|timex|named|pred|card|rel|prop|not|or|imp|whq)*)>
+<!ELEMENT cons ((drs|alfa|smerge|merge|timex|named|pred|card|rel|eq|prop|not|pos|nec|or|imp|whq)*)>
 
 <!ELEMENT drs (dr*,label*)>
 <!ATTLIST drs
@@ -37,6 +35,10 @@
 
 <!ELEMENT merge (label,label)>
 <!ATTLIST merge
+          label CDATA #REQUIRED >
+
+<!ELEMENT smerge (label,label)>
+<!ATTLIST smerge
           label CDATA #REQUIRED >
 
 <!ELEMENT alfa (label,label)>
@@ -52,6 +54,14 @@
 
 <!ELEMENT not (label,index*)>
 <!ATTLIST not
+          label CDATA #REQUIRED >
+
+<!ELEMENT nec (label,index*)>
+<!ATTLIST nec
+          label CDATA #REQUIRED >
+
+<!ELEMENT pos (label,index*)>
+<!ATTLIST pos
           label CDATA #REQUIRED >
 
 <!ELEMENT or (label,label,index*)>
@@ -99,6 +109,12 @@
           label CDATA #REQUIRED
           sense CDATA #REQUIRED
           symbol CDATA #REQUIRED
+          arg1 CDATA #REQUIRED 
+          arg2 CDATA #REQUIRED >
+
+<!ELEMENT eq (index*)>
+<!ATTLIST eq
+          label CDATA #REQUIRED
           arg1 CDATA #REQUIRED 
           arg2 CDATA #REQUIRED >
 

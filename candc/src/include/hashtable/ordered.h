@@ -72,9 +72,14 @@ namespace NLP {
 	entries.resize(0);
       }
 
-      void renumber(void){
+      virtual void renumber(void){
         for(ulong i = 0; i != entries.size(); ++i)
           entries[i]->index = i;
+      }
+
+      void compact(void){
+        iterator new_end = std::remove(entries.begin(), entries.end(), reinterpret_cast<Entry *>(0));
+        entries.erase(new_end, entries.end());
       }
 
       void compress(void){

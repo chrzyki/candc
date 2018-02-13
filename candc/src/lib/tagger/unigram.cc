@@ -27,7 +27,7 @@
 
 using namespace std;
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 using namespace HashTable;
 

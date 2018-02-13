@@ -15,9 +15,9 @@ namespace NLP {
 
     class Feature {
     public:
-      double lambda;	// feature weight in sum form
-      double est;	// estimated feature expectation
-      double emp;	// empirical feature expectation
+      double lambda;        // feature weight in sum form
+      double est;        // estimated feature expectation
+      double emp;        // empirical feature expectation
 
       Feature(void): lambda(0.0), est(0.0), emp(0.0) {};
       Feature(double freq): lambda(0.0), est(0.0), emp(freq) {};
@@ -53,31 +53,31 @@ namespace NLP {
 
       // sc: put the emp check in
       double grad(void) { 
-	if(emp != 0.0)
-	  return emp - est;
-	return 0.0;
+        if(emp != 0.0)
+          return emp - est;
+        return 0.0;
       };
 
       double grad_gaussian(double alpha) {
-	/*
-	if(emp >= 1000)
-	  alpha = 0.0;
-	else
-	  alpha = alpha / (exp(emp / 100));
-	*/
-	if(emp != 0.0)
-	  return emp - est - lambda*alpha;
-	return 0.0;
+        /*
+        if(emp >= 1000)
+          alpha = 0.0;
+        else
+          alpha = alpha / (exp(emp / 100));
+        */
+        if(emp != 0.0)
+          return emp - est - lambda*alpha;
+        return 0.0;
       };
 
       double penalty_gaussian(double alpha) {
-	/*
-	if(emp >= 1000)
-	  alpha = 0.0;
-	else
-	  alpha = alpha / (exp(emp / 100));
-	*/
-	return 0.5*lambda*lambda*alpha; 
+        /*
+        if(emp >= 1000)
+          alpha = 0.0;
+        else
+          alpha = alpha / (exp(emp / 100));
+        */
+        return 0.5*lambda*lambda*alpha; 
       };
     };
 

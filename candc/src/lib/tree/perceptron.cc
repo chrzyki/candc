@@ -8,23 +8,7 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-#include <mpi.h>
-
-#include <cmath>
-#include <string>
-#include <vector>
-#include <deque>
-#include <valarray>
-#include <numeric>
-#include <limits>
-
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
-#include <stdexcept>
-
-#include <fpu_control.h>
+#include "std.h"
 
 using namespace std;
 
@@ -39,8 +23,6 @@ using namespace std;
 #include "tree/forest.h"
 #include "tree/gis.h"
 #include "tree/perceptron.h"
-
-#include "cluster.h"
 
 namespace NLP { namespace Tree {
 
@@ -63,8 +45,8 @@ Perceptron::_save_weights(long iteration){
 
   for(Features::iterator feature = features.begin(); feature != features.end(); ++feature)
     out << "current: " << feature->lambda << " total: " << feature->est
-	<< " nforests: " << nforests
-	<< " average: " << feature->est / ((iteration + 1) * nforests) << '\n';
+        << " nforests: " << nforests
+        << " average: " << feature->est / ((iteration + 1) * nforests) << '\n';
 }
 
 void 
@@ -89,15 +71,15 @@ Perceptron::iterate(void){
     while(in >> sentence){
       Forest *forest = new Forest(in, features);
       if(!forest->check_deriv(features)){
-	delete forest;
-	continue;
+        delete forest;
+        continue;
       }
 
       if(sentence % 1000 == 0)
-	cout << "processing forest " << sentence << endl;
+        cout << "processing forest " << sentence << endl;
 
       if(iteration == 0)
-	nforests++;
+        nforests++;
 
       DisjNode *max_root = forest->viterbi();
       // this now does the accumulated averaged parameters also (if using Daume's method):
@@ -107,15 +89,15 @@ Perceptron::iterate(void){
 
       // naive version:
       for(ulong i = 0;  i < features.size(); ++i){
-	// feature.est stores the cummulative lambda value
-	features[i].est += features[i].lambda;
+        // feature.est stores the cummulative lambda value
+        features[i].est += features[i].lambda;
       }
 
       /*
-	if(sentence % 1000 == 0){
-	cout << "saving weights\n";
-	_save_weights(iteration);
-	}
+        if(sentence % 1000 == 0){
+        cout << "saving weights\n";
+        _save_weights(iteration);
+        }
       */
 
       delete forest;

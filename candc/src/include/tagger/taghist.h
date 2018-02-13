@@ -14,7 +14,7 @@
 // in the current 'document' for the history feature
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     class TagHist {
     public:

@@ -75,7 +75,7 @@ public:
 
   // load a single gazetteer file with a given set of flags
   // a gazetteer file consists of a list of words one per line
-  void load(const string type, const string &filename, GazFlags flags){
+  void load(const string, const string &filename, GazFlags flags){
     ifstream stream(filename.c_str());
     if(!stream)
       throw IOException("could not open gazetteers file ", filename);

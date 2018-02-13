@@ -51,7 +51,7 @@ namespace NLP {
 
   using namespace NLP::Config;
   using namespace NLP::CCG;
-  using namespace NLP::Tagger;
+  using namespace NLP::Taggers;
 
 class CandC {
 public:
@@ -127,7 +127,7 @@ public:
   CandC(Config &cfg, const std::string &PREFACE);
   virtual ~CandC(void);
 
-  void print_meta(std::ostream &out, const StreamPrinter::Format FORMAT){
+  void print_meta(std::ostream &out, const StreamPrinter::Format){
     if(meta_sentids.size() == 0 || meta == "")
       return;
 
@@ -169,7 +169,7 @@ public:
   };
 
   bool
-  is_meta(std::string &meta){
+  is_meta(std::string &){
     if(strncmp(buffer, "<META>", 6))
       return false;
 
@@ -177,9 +177,18 @@ public:
   }
 
   bool load_sentence(std::ostream &out);
+	bool load_oracle(std::ostream &out);
   bool load_lemmas(void);
 
-  double parse(IO::Input &in, IO::Output &out, IO::Log &log, bool START = true);
+  double parse(IO::Input &in, IO::Output &out, IO::Log &log,
+               bool START = true, const std::string &printer = "");
+
+	double oracle(IO::Input &in, IO::Input &constraints, IO::Output &out, IO::Log &log,
+                bool START = true, const std::string &printer = "");
+protected:
+  Taggers::State *const pos_state;
+  Taggers::State *const chunk_state;
+  Taggers::State *const ner_state;
 };
 
 }

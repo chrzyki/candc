@@ -23,7 +23,7 @@
 
 using namespace std;
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 class TagSetDict::_Impl: public Shared {
 public:

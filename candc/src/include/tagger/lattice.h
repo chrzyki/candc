@@ -14,7 +14,7 @@
 // Beam search
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     // the Node class is a linked list of tags and their scores
     // it also caches the previous tag so we don't have to follow
@@ -24,13 +24,13 @@ namespace NLP {
     // longer Markov windows
     class Node {
     public:
-      const Node *prev;	// best node in the previous column of the lattice
-      NLP::Tag pid;	// cached best previous tag
-      NLP::Tag id;	// current tag
-      float sum;	// current score
+      const Node *prev;        // best node in the previous column of the lattice
+      NLP::Tag pid;        // cached best previous tag
+      NLP::Tag id;        // current tag
+      float sum;        // current score
 
       void *operator new(size_t size, NodePool<Node> *pool) { return pool->alloc(size); }
-      void operator delete(void *, NodePool<Node> *pool) { /* do nothing */ }
+      void operator delete(void *, NodePool<Node> *) { /* do nothing */ }
 
       Node(const Node *prev, NLP::Tag pid, NLP::Tag id, float sum):
         prev(prev), pid(pid), id(id), sum(sum) {}
@@ -39,7 +39,7 @@ namespace NLP {
       // replace the existing link and score
       void update(const Node *prev, float sum){
         this->prev = prev;
-	this->pid = prev->id;
+        this->pid = prev->id;
         this->sum = sum;
       }
     };
@@ -60,7 +60,7 @@ namespace NLP {
 
       NodeMatrix(ulong nklasses):
           nklasses(nklasses), nklasses2(nklasses*nklasses),
-	  pool(new NodePool<Node>()), nodes(nklasses2) {
+          pool(new NodePool<Node>()), nodes(nklasses2) {
         used.reserve(nklasses2);
       }
       ~NodeMatrix(void) { delete pool; }
@@ -80,7 +80,7 @@ namespace NLP {
       Lattice::const_iterator end(void) const { return used.end(); }
 
       Node *create(const Node *prev, NLP::Tag pid, NLP::Tag id, float sum){
-	return new (pool) Node(prev, pid, id, sum);
+        return new (pool) Node(prev, pid, id, sum);
       }
       Node *start(void) { return create(0, NLP::SENTINEL, NLP::SENTINEL, 0.0); }
 

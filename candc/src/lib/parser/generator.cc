@@ -60,7 +60,7 @@ Generator::combine(const long j, const long i, const long k, ostream &log){
   chart.add(i, j - i, results[0]);
 
   return true;
-};
+}
 
 void
 Generator::print_deps(ostream &out, const SuperCat *sc, char type,
@@ -234,7 +234,7 @@ Generator::print_rules_deps(ostream &out, const SuperCat *sc, char type,
 }
 
 void
-Generator::_print_rdeps_dist(ostream &out, char type, Position lpos, Position rpos,
+Generator::_print_rdeps_dist(ostream &out, char, Position lpos, Position rpos,
 			     const Raws &tags, DistType dist){
   ulong nverbs = 0;
   ulong npunct = 0;
@@ -345,11 +345,12 @@ Generator::print_filled(std::ostream &out, const SuperCat *sc){
 bool
 Generator::unary(Cell &TBcell, Cell &cell) {
   for(ulong i = 0; i < TBcell.size() - 1; ++i)
-    if(!chart.genlex(TBcell[i], TBcell[i + 1], cell) && !chart.gen_tr(TBcell[i], TBcell[i + 1], cell))
+    if(!chart.genlex(TBcell[i], TBcell[i + 1], cell) &&
+       !chart.gen_tr(TBcell[i], TBcell[i + 1], cell))
       return false;
 
   return true;
-};
+}
 
 //used to print sentences for which we can produce the gold standard
 void
@@ -374,7 +375,7 @@ Generator::parse(const vector<TBNode> &TBsentence){
   
   convertTBsent(TBsentence, sent);
   try {
-    chart.load(sent, 0.0, false, false); // final argument is used for question parsing
+    chart.load(sent, 0.0, false, false, false); // final argument is used for question parsing
   }catch(ParseError e){
     // ignore sentences we can't load because of unknown supertags
     return false;
@@ -409,13 +410,12 @@ Generator::parse(const vector<TBNode> &TBsentence){
 bool
 Generator::parse(const TBSentence &tb, const Sentence &sent, ostream &log){
   ++nsentences;
-
   if(!TBchart.load(tb)){
     log << nsentences << ":failed to load treebank chart" << endl;
     return false;
   }
   try {
-    chart.load(sent, 0.0, false, false);
+    chart.load(sent, 0.0, false, false, false);
   }catch(NLP::Exception e){
     log << nsentences << ":failed to load parser chart " << e.msg << endl;
     return false;

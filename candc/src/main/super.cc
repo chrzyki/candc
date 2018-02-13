@@ -18,5 +18,5 @@ const char *PROGRAM_NAME = "super";
 
 int
 run(int argc, char **argv){
-  return run_tag<Tagger::Super>(false, 20, 0.0, "%w|%p \n", "%w|%p|%s \n", argc, argv);
+  return run_tag<Taggers::Super>(false, 20, 0.0, "%w|%p \n", "%w|%p|%s \n", argc, argv);
 }

@@ -14,7 +14,7 @@ namespace NLP {
   using namespace IO;
   using namespace Config;
 
-  namespace Tagger {
+  namespace Taggers {
 
     // the internal tagger state information used during tagging
     class State;
@@ -28,15 +28,15 @@ namespace NLP {
 
     inline Algorithm str2alg(const std::string &s){
       if(s == "viterbi")
-	return VITERBI;
+        return VITERBI;
       else if(s == "noseq")
-	return NOSEQ;
+        return NOSEQ;
       else if(s == "greedy")
-	return GREEDY;
+        return GREEDY;
       else if(s == "fwdbwd")
-	return FWDBWD;
+        return FWDBWD;
       else
-	throw NLP::Exception("unrecognised decoding algorithm '" + s + "' [viterbi, noseq, greedy, fwdbwd]");
+        throw NLP::Exception("unrecognised decoding algorithm '" + s + "' [viterbi, noseq, greedy, fwdbwd]");
     }
 
     inline void check_alg(const std::string &s){
@@ -47,27 +47,28 @@ namespace NLP {
     public:
       class Config: public Model::Config {
       public:
-	OpPath tagdict;
-	OpPath unknowns;
+        OpPath tagdict;
+        OpPath unknowns;
 
-	Op<ulong> cutoff_default;
-	Op<ulong> cutoff_words;
+        Op<ulong> cutoff_default;
+        Op<ulong> cutoff_words;
+        Op<ulong> cutoff_attribs;
 
-	Op<ulong> rare_cutoff;
+        Op<ulong> rare_cutoff;
 
-	Op<ulong> beam_width;
-	Op<double> beam_ratio;
-	Op<double> forward_beam_ratio;
+        Op<ulong> beam_width;
+        Op<double> beam_ratio;
+        Op<double> forward_beam_ratio;
 
-	Op<ulong> tagdict_min;
-	Op<double> tagdict_ratio;
+        Op<ulong> tagdict_min;
+        Op<double> tagdict_ratio;
 
-	Op<ulong> maxwords;
+        Op<ulong> maxwords;
 
-	Config(const std::string &name, const std::string &desc,
-	       const OpPath *base, Mode mode, double SIGMA,
-	       ulong NITER);
-	virtual ~Config(void){ /* do nothing */ }
+        Config(const std::string &name, const std::string &desc,
+               const OpPath *base, Mode mode, double SIGMA,
+               ulong NITER);
+        virtual ~Config(void){ /* do nothing */ }
       };
     public:
       Config &cfg;
@@ -86,17 +87,17 @@ namespace NLP {
 
       // tag a single sentence
       virtual void tag(NLP::Sentence &sent, Algorithm alg, ulong DICT_CUTOFF,
-		       State *state = 0) const;
+                       State *state = 0) const;
       // tag from a reader and output to a writer
       virtual void tag(NLP::IO::Reader &reader, NLP::IO::Writer &writer,
-		       Algorithm alg, ulong DICT_CUTOFF) const;
+                       Algorithm alg, ulong DICT_CUTOFF) const;
 
       // tag a single sentence
       virtual void mtag(NLP::Sentence &sent, Algorithm alg, ulong DICT_CUTOFF, double BETA,
-			State *state = 0) const;
+                        State *state = 0) const;
       // tag from a reader and output to a writer
       virtual void mtag(NLP::IO::Reader &reader, NLP::IO::Writer &writer,
-			Algorithm alg, ulong DICT_CUTOFF, double BETA) const;
+                        Algorithm alg, ulong DICT_CUTOFF, double BETA) const;
 
       // private implementation trick
       class Impl;

@@ -45,10 +45,10 @@ operator new[](size_t size, Pool *pool) {
 }
 
 void
-operator delete(void *, Pool *pool) { /* do nothing */ }
+operator delete(void *, Pool *) { /* do nothing */ }
 
 void
-operator delete[](void *, Pool *pool) { /* do nothing */ }
+operator delete[](void *, Pool *) { /* do nothing */ }
 
 namespace NLP { namespace CCG {
 
@@ -81,7 +81,8 @@ ulong SuperCat::nsupercats = 0;
 SuperCat::SuperCat(Pool *pool, Position pos, const Cat *cat, SCatFlags flags):
     cat(cat), unfilled(Dependency::get(pool, pos, cat)), filled(0),
     flags(flags), nvars(cat->nvars()), nactive(nvars),
-    vars(new (pool) Variable[nvars]), left(0), right(0), next(0), max(0),
+    vars(new (pool) Variable[nvars]), feature(Features::NONE), depth(0),
+		pos(pos - 1), span(1), left(0), right(0), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
   if(cat->var)
@@ -94,11 +95,13 @@ SuperCat::Lexical(Pool *pool, Position pos, const Cat *cat, SCatFlags flags){
   return new (pool) SuperCat(pool, pos, cat, flags);
 }
 
-SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
+SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags, uchar depth,
                    const SuperCat *left, const SuperCat *right, Unify &unify):
     cat(cat), unfilled(0), filled(0),
     flags(flags), nvars(unify.nvariables), nactive(cat->nvars()),
-    vars(new (pool) Variable[nvars]), left(left), right(right), next(0), max(0),
+    vars(new (pool) Variable[nvars]), feature(unify.feature), depth(depth),
+    pos(left->pos), span(left->span + right->span),
+		left(left), right(right), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
   // this should never happen now since the SuperCat::Rule static method
@@ -161,19 +164,20 @@ SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
 }
 
 SuperCat *
-SuperCat::Rule(Pool *pool, const Cat *cat, SCatFlags flags,
+SuperCat::Rule(Pool *pool, const Cat *cat, SCatFlags flags, uchar depth,
 	       const SuperCat *left, const SuperCat *right, Unify &unify){
   if(cat->nvars() > unify.nvariables)
     return 0;
 
-  return new (pool) SuperCat(pool, cat, flags, left, right, unify);
+  return new (pool) SuperCat(pool, cat, flags, depth, left, right, unify);
 }
 
 SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
                    const SuperCat *left, const SuperCat *right):
     cat(cat), unfilled(right->unfilled), filled(0),
     flags(flags), nvars(right->nvars), nactive(right->nactive),
-    vars(new (pool) Variable[nvars]),
+    vars(new (pool) Variable[nvars]), feature(right->feature), depth(0),
+    pos(left->pos), span(left->span + right->span),
     left(left), right(right), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
@@ -200,10 +204,12 @@ SuperCat::Conj(Pool *pool, const Cat *cat, SCatFlags flags,
   return new (pool) SuperCat(pool, cat, flags, left, right);
 }
 
-SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
+SuperCat::SuperCat(Pool *, const Cat *cat, SCatFlags flags,
                    const SuperCat *left, const SuperCat *right, const SuperCat *vars):
     cat(cat), unfilled(vars->unfilled), filled(0),
-    flags(flags), nvars(vars->nvars), nactive(vars->nactive), vars(vars->vars),
+    flags(flags), nvars(vars->nvars), nactive(vars->nactive),
+    vars(vars->vars), feature(vars->feature), depth(0),
+    pos(left->pos), span(left->span + right->span),
     left(left), right(right), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
@@ -223,7 +229,9 @@ SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
                    const SuperCat *left, bool replace, RuleID rule):
     cat(cat), unfilled(0), filled(0), flags(flags),
     nvars(cat->nvars()), nactive(nvars),
-    vars(new (pool) Variable[nvars]), left(left), right(0), next(0), max(0),
+    vars(new (pool) Variable[nvars]), feature(Features::NONE), depth(0),
+    pos(left->pos), span(left->span),
+    left(left), right(0), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
   assert(nactive <= nvars);
@@ -251,10 +259,12 @@ SuperCat::LexRule(Pool *pool, const Cat *cat, SCatFlags flags,
 
 
 SuperCat::SuperCat(Pool *pool, const TRCat &trcat, SCatFlags flags,
-                   const SuperCat *left, RuleID rule):
+                   const SuperCat *left, RuleID):
     cat(trcat.cat), unfilled(0), filled(0),
     flags(flags), nvars(trcat.cat->nvars()), nactive(nvars),
-    vars(new (pool) Variable[nvars]), left(left), right(0), next(0), max(0),
+    vars(new (pool) Variable[nvars]), feature(Features::NONE), depth(0),
+    pos(left->pos), span(left->span),
+    left(left), right(0), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
   assert(nactive <= nvars);
@@ -287,7 +297,9 @@ SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
                    const SuperCat *head_sc, RuleID rule):
     cat(cat), unfilled(0), filled(0), flags(flags),
     nvars(cat->nvars()), nactive(nvars),
-    vars(new (pool) Variable[nvars]), left(left), right(right), next(0), max(0),
+    vars(new (pool) Variable[nvars]), feature(Features::NONE), depth(0),
+    pos(left->pos), span(left->span + right->span),
+    left(left), right(right), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
   assert(nactive <= nvars);
@@ -313,7 +325,9 @@ SuperCat::SuperCat(Pool *pool, const Cat *cat, SCatFlags flags,
 		   bool replace, RuleID rule):
     cat(cat), unfilled(0), filled(0), flags(flags),
     nvars(cat->nvars()), nactive(nvars),
-    vars(new (pool) Variable[nvars]), left(left), right(right), next(0), max(0),
+    vars(new (pool) Variable[nvars]), feature(Features::NONE), depth(0),
+    pos(left->pos), span(left->span + right->span),
+    left(left), right(right), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
   assert(nactive <= nvars);
@@ -342,7 +356,8 @@ SuperCat::TypeChange(Pool *pool, const Cat *cat, SCatFlags flags,
 SuperCat::SuperCat(Pool *pool, SCatFlags flags, const SuperCat *left, const SuperCat *right):
     cat(left->cat), unfilled(0), filled(0),
     flags(flags), nvars(2), nactive(nvars),
-    vars(new (pool) Variable[nvars]),
+    vars(new (pool) Variable[nvars]), feature(Features::NONE), depth(0),
+    pos(left->pos), span(left->span + right->span),
     left(left), right(right), next(0), max(0),
     marker(MARK_NONE), score(0.0), inside(0.0), outside(0.0), d_inside(0.0) {
 
@@ -373,7 +388,8 @@ SuperCat::print_filled(ostream &out, char type, const vector<string> &heads,
 }
 
 void
-SuperCat::print_filled_words(ostream &out, char type, const vector<string> &words, const vector<string> &tags) const {
+SuperCat::print_filled_words(ostream &out, char type, const vector<string> &words,
+			     const vector<string> &) const {
   for(const Filled *dep = filled; dep; dep = dep->next){
     ulong start, end;
     if(dep->head < dep->filler){
@@ -387,7 +403,8 @@ SuperCat::print_filled_words(ostream &out, char type, const vector<string> &word
     if(nwords > 2)
       nwords = 2;
 
-    out << type << ' ' << words[dep->head - 1] << ' ' << dep->rel << ' ' << ulong(dep->rule) << ' ' << dep->lrange << ' ' << nwords << '\n';
+    out << type << ' ' << words[dep->head - 1] << ' ' << dep->rel << ' '
+	<< ulong(dep->rule) << ' ' << dep->lrange << ' ' << nwords << '\n';
   }
   return;
 }
@@ -461,7 +478,7 @@ SuperCat::print_filled(ostream &out, const Markedup &markedup, const Relations &
 }
 
 void 
-SuperCat::get_grs(GRs &grs, const Markedup &markedup, const Relations &rels,
+SuperCat::get_grs(GRs &grs, const Relations &rels,
 		  FilledDeps &seen, const Sentence &sent) const {
   for(const Filled *dep = filled; dep; dep = dep->next){
     const Relation &rel = rels[dep->rel];
@@ -471,11 +488,27 @@ SuperCat::get_grs(GRs &grs, const Markedup &markedup, const Relations &rels,
   }
 }
 
+void 
+SuperCat::get_filled(GRs &deps, const Relations &rels,
+		     const Sentence &sent, const bool julia_slots) const {
+  for(const Filled *dep = filled; dep; dep = dep->next){
+    const Relation &rel = rels[dep->rel];
+    GR gr;
+    ostringstream label;
+    rel.print_slot(label, julia_slots);
+    gr.label = label.str();
+    Argument arg(sent.words[dep->head - 1], dep->head - 1);
+    gr.args.push_back(arg);
+    arg.raw = sent.words[dep->filler - 1];
+    arg.pos = dep->filler - 1;
+    gr.args.push_back(arg);
+    deps.push_back(gr);
+  }
+}
+
 const char *
 SuperCat::flags2str(void) const{
-  if(SuperCat::CONJ & flags)
-    return "conj";
-  else if(SuperCat::TR & flags)
+  if(SuperCat::TR & flags)
     return "tr";
   else if(SuperCat::LEX & flags)
     return "lex";
@@ -506,6 +539,8 @@ SuperCat::flags2str(void) const{
     return "ltc";
   else if(SuperCat::RIGHT_TC & flags)
     return "rtc";
+  else if(SuperCat::CONJ & flags)
+    return "conj";
   else if(SuperCat::FUNNY_CONJ & flags)
     return "funny";
   else if(SuperCat::APPO & flags)
@@ -536,6 +571,73 @@ SuperCat::conj_info(std::ostream &stream) const{
   return stream;
 }
 
+std::ostream &
+SuperCat::out_boxer(std::ostream &out, Feature parent) const{
+  if(SuperCat::LEX & flags){
+    // lx is a special case!
+    out << "lx(";
+    cat->out_boxer(out, parent);
+    out << ", ";
+    left->cat->out_boxer(out, feature.override(parent));
+    return out << ',';
+  }else if(SuperCat::CONJ & flags){
+    // resolve the ambiguous case of lp(conj(...)) versus conj(comma,
+    if((flags & SuperCat::LEFT_PUNCT) && (SuperCat::CONJ & right->flags)){
+      out << "lp(";
+      // now fall through to the end like left punct
+    }else if((flags & SuperCat::RIGHT_PUNCT) && (SuperCat::CONJ & left->flags)){
+      out << "rp(";
+      // now fall through to the end like left punct
+    }else{
+      // conj is a special case!
+      out << "conj(";
+      cat->out_boxer(out, parent);
+      out << ", ";
+      right->cat->out_boxer(out, feature.override(parent));
+      return out << ',';
+    }
+  }else if(SuperCat::FWD_APP & flags)
+    out << "fa(";
+  else if(SuperCat::BWD_APP & flags)
+    out << "ba(";
+  else if(SuperCat::RECURSIVE & flags){
+    if(SuperCat::FWD_COMP & flags)
+      out << "gfc(";
+    else if(SuperCat::BWD_COMP & flags)
+      out << "gbc(";
+    else if(SuperCat::BWD_CROSS & flags)
+      out << "gbxc(";
+    else
+      assert(!"illegal recursive flag for combinator");
+    cat->out_boxer(out, parent);
+    return out << ", " << static_cast<ulong>(depth) << ',';
+  }else if(SuperCat::FWD_COMP & flags)
+    out << "fc(";
+  else if(SuperCat::BWD_COMP & flags)
+    out << "bc(";
+  else if(SuperCat::BWD_CROSS & flags)
+    out << "bxc(";
+  else if(SuperCat::LEFT_PUNCT & flags)
+    out << "lp(";
+  else if(SuperCat::RIGHT_PUNCT & flags)
+    out << "rp(";
+  else if(SuperCat::LEFT_TC & flags)
+    out << "ltc(";
+  else if(SuperCat::RIGHT_TC & flags)
+    out << "rtc(";
+  else if(SuperCat::TR & flags)
+    out << "tr(";
+  else if(SuperCat::FUNNY_CONJ & flags)
+    out << "funny(";
+  else if(SuperCat::APPO & flags)
+    out << "appo(";
+  else
+    assert(!"unrecognised combinator flag in Prolog printing");
+
+  cat->out_boxer(out, parent);
+  return out << ',';
+}
+
 ulong equiv_calls = 0;
 ulong equiv_unary = 0;
 ulong equiv_nactive = 0;
@@ -544,5 +646,22 @@ ulong equiv_vars = 0;
 ulong equiv_deps = 0;
 ulong equiv_ndeps = 0;
 ulong equiv_true = 0;
+
+std::string
+equivalent_explain(const SuperCat *sc1, const SuperCat *sc2){
+  if(sc1->nactive != sc2->nactive)
+    return "sc->nactive";
+
+  if(!vars_eq(sc1->vars, sc2->vars, sc1->nactive))
+    return "sc->vars";
+
+  if(sc1->unary() != sc2->unary())
+    return "sc->unary()";
+     
+  if(*sc1->cat != *sc2->cat)
+    return "sc->cat";
+
+  return "equiv";
+  }
 
 } }

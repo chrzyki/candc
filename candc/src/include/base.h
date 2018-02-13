@@ -52,6 +52,7 @@ namespace NLP {
 #include "utils/string.h"
 
 #include "sequence.h"
+#include "parser/constraint.h"
 #include "sentence.h"
 
 #include "input.h"

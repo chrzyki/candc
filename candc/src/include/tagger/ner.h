@@ -16,7 +16,7 @@
 //   a single input sentence/POS tags/chunk tags interface
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     class NER: public Tagger {
     public:

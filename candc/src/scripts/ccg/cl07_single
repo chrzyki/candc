@@ -31,14 +31,14 @@ function run(){
   GOUT=$TABLE/$SEC.gold
   AOUT=$TABLE/$SEC.auto
 
-  echo "super tagging WSJ $SEC with gold pos beta=$BETA k=$K" | tee -a $TABLE/log
+  echo "super tagging WSJ $SEC with gold pos" | tee -a $TABLE/log
   $BIN/super --model $SUPER --input $GOLD/wsj$SEC.pos --output $GOUT \
     --ofmt '%w\t%p\t%w\t%s\n\n\n' $OTHER 2>> $TABLE/log
 
   echo "evaluating super tagged WSJ $DATA set" | tee -a $TABLE/log
   $SCRIPTS/evalmulti $GOLD/wsj$SEC.stagged $SUPER $GOUT > $GOUT.eval
 
-  echo "super tagging WSJ $SEC with auto pos beta=$BETA k=$K" | tee -a $TABLE/log
+  echo "super tagging WSJ $SEC with auto pos" | tee -a $TABLE/log
   $BIN/super --model $SUPER --input $TABLE/wsj$SEC.pos --output $AOUT \
     --ofmt '%w\t%p\t%w\t%s\n\n\n' $OTHER 2>> $TABLE/log
 

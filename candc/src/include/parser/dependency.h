@@ -30,7 +30,7 @@ namespace NLP {
       Dependency *next;
 
       Dependency(Position head, RelID rel, VarID var, RuleID rule, Dependency *next):
-        rel(rel), head(head), var(var), rule(rule), conj(1),lrange(0), next(next) { assert(head); }
+        rel(rel), head(head), var(var), rule(rule), conj(1), lrange(0), next(next) { assert(head); }
 
       Dependency(Position head, RelID rel, VarID var, CatID lrange,
                  RuleID rule, Dependency *next):
@@ -71,7 +71,7 @@ namespace NLP {
       ~Dependency(void) { /* do nothing */ }
 
       void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); }
-      void operator delete(void *, Pool *pool) { /* do nothing */ }
+      void operator delete(void *, Pool *) { /* do nothing */ }
 
       static void _get(Pool *pool, Position pos, const Cat *cat, RuleID rule, 
 		       Dependencies &deps){
@@ -109,7 +109,7 @@ namespace NLP {
       return out << static_cast<ulong>(dep.head) << ' ' << dep.rel << ' ' 
 		 << static_cast<ulong>(dep.var) << ' '
                  << dep.lrange << ' ' << static_cast<ulong>(dep.rule);
-    };
+    }
 
     class DependencyCmp {
     public:

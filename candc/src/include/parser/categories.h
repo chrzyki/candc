@@ -54,14 +54,16 @@ namespace NLP {
       Cat *parse(const char *s){ return _parse(s, s); }
       Cat *parse(const std::string &s){ return _parse(s.c_str(), s.c_str()); }
 
+			const Constraint *constraint(const std::string &s);
+
       const Cat *canonize(const char *s){
-	const Cat *cat = seen[s];
-	if(!cat){
-	  cat = parse(s);
-	  seen.add(s, "", cat);
-	  canonical.add(cat);
-	}
-	return cat;
+				const Cat *cat = seen[s];
+				if(!cat){
+					cat = parse(s);
+					seen.add(s, "", cat);
+					canonical.add(cat);
+				}
+				return cat;
       }
 
       // used to create new canonical categories from a cat pointer

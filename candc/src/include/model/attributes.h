@@ -55,7 +55,7 @@ namespace NLP {
           throw NLP::Exception("unrecognised flag in BinAttributes::load");
 
         // TODO remove this dummy loading
-	std::string dummy;
+        std::string dummy;
         in >> dummy;
         if(dummy != None::str)
           throw NLP::Exception("expected an empty place holder in BinAttributes::load");
@@ -88,7 +88,7 @@ namespace NLP {
         if(type.flags)
           throw NLP::Exception("unrecognised flag in TagAttributes::load");
 
-	std::string value;
+        std::string value;
         in >> value;
 
         return insert(_tagset[value]); // _tagset.check(value));
@@ -124,12 +124,51 @@ namespace NLP {
         if(type.flags)
           throw NLP::Exception("unrecognised flag in BiTagAttributes::load");
 
-	std::string value1, value2;
+        std::string value1, value2;
         in >> value1 >> value2;
 
         return insert(_tagset[value1], _tagset[value2]); // _tagset.check(value1), _tagset.check(value2));
       };
     };
+
+
+    // same as the BiTagAttributes class except that it represents
+    // trigrams of tag features, in particular, this is used for the
+    // trigram feature of the three previously assigned tags
+    // representation is equivalent to a 3 dimensional array
+    class TriTagAttributes: public Attributes {
+    private:
+       const TagSet _tagset;
+       const size_t _ntags;
+       std::vector<Attribute> _attributes;
+    public:
+      TriTagAttributes(const TagSet &tagset): Attributes("TriTagAttributes"),
+          _tagset(tagset), _ntags(tagset.size()), _attributes(_ntags*_ntags*_ntags) {};
+
+      Attribute get(Tag t1, Tag t2, Tag t3) const {
+        return _attributes[t3.value()*_ntags*_ntags + t2.value()*_ntags + t1.value()];
+      };
+      Attribute &insert(Tag t1, Tag t2, Tag t3) {
+        return _attributes[t3.value()*_ntags*_ntags + t2.value()*_ntags + t1.value()];
+      };
+
+      Attribute operator()(Tag t1, Tag t2, Tag t3) const { return get(t1, t2, t3); };
+      Attribute &operator()(Tag t1, Tag t2, Tag t3) { return insert(t1, t2, t3); };
+
+      Attribute &load(const Type &type, std::istream &in){
+        if(type.index)
+          throw NLP::Exception("cannot represent multiple types in TriTagAttributes");
+        if(type.flags)
+          throw NLP::Exception("unrecognised flag in TriTagAttributes::load");
+
+        std::string value1, value2, value3;
+        in >> value1 >> value2 >> value3;
+
+        return insert(_tagset[value1], _tagset[value2], _tagset[value3]);
+        // _tagset.check(value1), _tagset.check(value2)), _tagset.check(value3));
+      };
+    };
+
 
     // hash table for storing unigram (i.e. word features)
     // however, it is also used to store more general string
@@ -159,6 +198,53 @@ namespace NLP {
       class _Impl;
       _Impl *_impl;
     };
+
+    class BigramAttributes: public Attributes {
+    public:
+      BigramAttributes(Lexicon lexicon);
+      BigramAttributes(BigramAttributes &other);
+      ~BigramAttributes(void);
+
+      size_t size(void) const;
+
+      Attribute get(const Type &type, Word word1, Word word2) const;
+      Attribute &insert(const Type &type, Word word1, Word word2);
+
+      Attribute operator()(const Type &type, Word word1, Word word2) const { return get(type, word1, word2); };
+      Attribute &operator()(const Type &type, Word word1, Word word2) { return insert(type, word1, word2); };
+
+      Attribute &load(const Type &type, std::istream &in);
+
+      void print_stats(std::ostream &out) const;
+    private:
+      // private implementation trick
+      class _Impl;
+      _Impl *_impl;
+    };
+
+    class TrigramAttributes: public Attributes {
+    public:
+      TrigramAttributes(Lexicon lexicon);
+      TrigramAttributes(TrigramAttributes &other);
+      ~TrigramAttributes(void);
+
+      size_t size(void) const;
+
+      Attribute get(const Type &type, Word word1, Word word2, Word word3) const;
+      Attribute &insert(const Type &type, Word word1, Word word2, Word word3);
+
+      Attribute operator()(const Type &type, Word word1, Word word2, Word word3) const { return get(type, word1, word2, word3); };
+      Attribute &operator()(const Type &type, Word word1, Word word2, Word word3) { return insert(type, word1, word2, word3); };
+
+      Attribute &load(const Type &type, std::istream &in);
+
+      void print_stats(std::ostream &out) const;
+    private:
+      // private implementation trick
+      class _Impl;
+      _Impl *_impl;
+    };
+
 
     // similar to UniAttributes except designed to store
     // prefix/suffix features represented using the Affix class

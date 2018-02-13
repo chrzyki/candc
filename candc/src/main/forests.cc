@@ -8,13 +8,10 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-#include "mpi.h"
-
 #include "parser/_parser.h"
 #include "parser/printer.h"
 #include "parser/print_stream.h"
 #include "parser/print_deps.h"
-#include "parser/print_prolog.h"
 #include "parser/decoder_derivs.h"
 #include "parser/decoder_deps_recall.h"
 #include "parser/decoder_derivs_random.h"
@@ -48,7 +45,7 @@ const char *PROGRAM_NAME = "forests";
 using namespace std;
 using namespace NLP;
 using namespace NLP::IO;
-using namespace NLP::Tagger;
+using namespace NLP::Taggers;
 using namespace NLP::CCG;
 
 inline bool
@@ -217,7 +214,7 @@ run(int argc, char **argv){
       break;
     }
 
-    integration.super.mtag(sent, NLP::Tagger::FWDBWD, K, 0.001);
+    integration.super.mtag(sent, NLP::Taggers::FWDBWD, K, 0.001);
     force_gold_super(sent);
 
     bool read_gold = read_features(FEATS, feats, integration.parser, gold_feats, gold_derivs);
@@ -243,17 +240,17 @@ run(int argc, char **argv){
       const double BETA = BETAS[trial];
       const ulong K = DICT_CUTOFFS[trial];
 
-      if(integration.parser.parse(BETA)){
+      if(integration.parser.parse(BETA, false)){
 	ulong id = print_lengths() ? sent.words.size() : nsentences;
 	if(integration.parser.print_forest(inside_outside, out, id, gold_feats, gold_derivs)){
 	  ++nparsed;
 	  log << start + nsentences << ' ' << CCG::SuperCat::nsupercats << ' '
 	      << nparsed*100.0/nsentences << '%' << endl;
 
-	  ulong nequiv, ntotal;
-	  double logderivs = integration.parser.calc_stats(nequiv, ntotal);
-	  log << start + nsentences << " stats: logderivs nequiv " << logderivs
-	      << ' ' << nequiv << ' ' << ntotal << endl;
+	  CCG::Statistics stats;
+	  integration.parser.calc_stats(stats);
+	  log << start + nsentences << " stats: logderivs nequiv " << stats.logderivs
+	      << ' ' << stats.nequiv << ' ' << stats.ntotal << endl;
 	  break;
 	}else{
 	  log << nsentences << " no spanning node at B=" << BETA << endl;

@@ -11,7 +11,7 @@
 
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     // fast memory allocation and caching of Node objects
     template <class Node>
@@ -30,7 +30,7 @@ namespace NLP {
           return (void *)Pool::alloc(size);
       };
 
-      void free(Node *node){
+      void free(Node *){
 	//        node->prev = _free;
         //_free = node;
       };

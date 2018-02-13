@@ -14,6 +14,8 @@
 // used for affix feature storage and lookup in the taggers
 // this code is not portable to multi-byte language encodings e.g. Unicode
 
+#include	<cstring>
+
 namespace NLP {
 
   class Affix {
@@ -65,6 +67,6 @@ namespace NLP {
     char operator[](int i) const { return reinterpret_cast<const char *>(&_value)[i]; }
   };
 
-  inline bool operator==(Affix a1, Affix a2){ return a1.value() == a2.value(); };
+  inline bool operator==(Affix a1, Affix a2){ return a1.value() == a2.value(); }
 
 }

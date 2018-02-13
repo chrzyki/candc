@@ -109,7 +109,8 @@ XMLPrinter::derivation(const SuperCat *sc, Sentence &sent){
   if(FORMAT & FMT_WS)
     out.stream << '\n';
   recurse(sc, sent, 1);
-  out.stream << "</ccg>";
+	out.stream << "</ccg>\n";
+	out.stream << "<deps>\n<![CDATA[\n" << deps.str() << "]]></deps>";
 }
 
 static std::string
@@ -158,6 +159,20 @@ XMLPrinter::leaf(Sentence &sent, ulong i, const Cat *cat){
     out.stream << '\"';
   }
   out.stream << " />\n";
+}
+
+void
+XMLPrinter::error(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF){
+	out.stream << "<error beta=\"" << BETA << "\" dictcutoff=\""
+						 << DICT_CUTOFF << "\">" << REASON << "</error>";
+	StreamPrinter::error(REASON, sent, BETA, DICT_CUTOFF);
+}
+
+void
+XMLPrinter::failed(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF){
+	out.stream << "<failed beta=\"" << BETA << "\" dictcutoff=\""
+						 << DICT_CUTOFF << "\">" << REASON << "</failed>";
+	StreamPrinter::failed(REASON, sent, BETA, DICT_CUTOFF);
 }
 
 } }

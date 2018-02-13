@@ -55,7 +55,7 @@ public:
   ~_EquivEntry(void) { /* do nothing */ }
 
   void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); }
-  void operator delete(void *, Pool *pool) { /* do nothing */ }
+  void operator delete(void *, Pool *) { /* do nothing */ }
 
   const SuperCat *canonical(void) const { return _begin; }
   void add(SuperCat *sc) {

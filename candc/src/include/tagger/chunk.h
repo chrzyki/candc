@@ -10,7 +10,7 @@
 // please email candc@it.usyd.edu.au to obtain a copy.
 
 namespace NLP {
-  namespace Tagger {
+  namespace Taggers {
 
     class Chunk: public Tagger {
     public:

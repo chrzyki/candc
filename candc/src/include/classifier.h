@@ -25,7 +25,7 @@ namespace NLP {
 	Config(const OpPath *base = 0, Mode mode = DECODE,
 	       const std::string &name = "classifier",
 	       const std::string &desc = "classifier config",
-	       double SIGMA = 0.707, ulong NITER = 400);
+	       double SIGMA = 1.414, ulong NITER = 400);
 	virtual ~Config(void){ /* do nothing */ }
       };
     public:

@@ -28,6 +28,7 @@ namespace NLP {
     extern void make_directory(const std::string &dir);
     extern void gettimes(Time &usr, Time &sys, Time &total);
     extern ulong get_usage(void);
+    extern void setup_fpu(void);
 
   }
 }

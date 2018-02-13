@@ -42,7 +42,7 @@ DepDistFeature::load(istream &in, const std::string &filename, ulong id, Type ty
 }
 
 ulong
-DepDistFeature::get_id(istream &in, const std::string &filename, Type type,
+DepDistFeature::get_id(istream &in, const std::string &, Type type,
 		       std::vector<long> &) const {
   std::string tmp;
   in >> tmp;
@@ -93,7 +93,7 @@ DepDistFeature::_add(const Filled *filled, Type type, const Words &heads,
 
 void
 DepDistFeature::add(const SuperCat *sc, const Words &words, const Words &tags,
-		    Type type, std::vector<ulong> &ids) const {
+		    Type, std::vector<ulong> &ids) const {
   for(const Filled *filled = sc->filled; filled; filled = filled->next){
     _add(filled, DIST_ADJ_HEAD, words, tags, ids);
     _add(filled, DIST_ADJ_POS, tags, tags, ids);
@@ -127,8 +127,7 @@ DepDistFeature::_score(const Filled *filled, Type type,
 
 
 double
-DepDistFeature::score(const SuperCat *sc, const Words &words, const Words &tags,
-		      Type type) const {
+DepDistFeature::score(const SuperCat *sc, const Words &words, const Words &tags, Type) const {
   double score = 0.0;
 
   for(const Filled *filled = sc->filled; filled; filled = filled->next){

@@ -42,6 +42,7 @@ namespace NLP {
       Atom(const std::string &s): Fixed(_convert(s.c_str())) {}
       ~Atom(void) { /* do nothing */ }
       operator const char *(void) const;
+      const char *prolog(void) const;
 
       bool is_NP(void) const { return _value == Atoms::NP; }
       bool is_N(void) const { return _value == Atoms::N; }

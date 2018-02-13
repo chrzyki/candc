@@ -88,7 +88,7 @@ namespace NLP {
       ~Cat(void) { /* do nothing */ };
 
       void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); };
-      void operator delete(void *, Pool *pool) { /* do nothing */ }
+      void operator delete(void *, Pool *) { /* do nothing */ }
 
       bool is_atomic(void) const { return atom != Atoms::NONE; }
       bool is_complex(void) const { return atom == Atoms::NONE; }
@@ -254,6 +254,10 @@ namespace NLP {
       std::ostream &out(std::ostream &stream) const;
       std::ostream &out_novar(std::ostream &stream, const bool brack) const;
       std::ostream &out_novar_noX(std::ostream &stream, const bool brack) const;
+      std::ostream &out_boxer(std::ostream &stream, Feature parent,
+			      const bool brack = false) const;
+      std::ostream &out_short(std::ostream &stream, const bool brack = false) const;
+      std::ostream &out_js(std::ostream &stream) const;
     };
 
     inline std::ostream &operator <<(std::ostream &out, const Cat &cat){ return cat.out(out); }

@@ -9,9 +9,9 @@
 // If LICENCE.txt is not included in this distribution
 // please email candc@it.usyd.edu.au to obtain a copy.
 
-// NLP::Tagger::_BaseImpl
+// NLP::Taggers::_BaseImpl
 // provides some common services for the tagger classes
-// including the NLP::Tagger::State class which holds the
+// including the NLP::Tag::State class which holds the
 // Beam search lattice representation, the tagger buffer
 // and some frequently used temporary probability distribution
 // arrays 
@@ -51,7 +51,7 @@
 using namespace std;
 using namespace NLP::Model;
 
-namespace NLP { namespace Tagger {
+namespace NLP { namespace Taggers {
 
 // provides methods common to all of the taggers
 // reading in the feature file, code for common
@@ -141,6 +141,8 @@ public:
   TagAttributes pk_attribs;
   BiTagAttributes ppkpk_attribs;
   UniAttributes w_attribs;
+  BigramAttributes ww_attribs;
+  TrigramAttributes www_attribs;
 
   const ulong rare_cutoff;
 
@@ -150,7 +152,7 @@ public:
 
   const ulong maxwords;
 
-  NLP::Tags unknown_klasses;	// tags which can be assigned to previously unseen words
+  NLP::Tags unknown_klasses;        // tags which can be assigned to previously unseen words
 
   virtual void reg_attributes(void);
   virtual void create_unknowns(const Tagger::Config &cfg) = 0;
@@ -173,11 +175,11 @@ public:
 
   void tag(Sentence &sent, Algorithm alg, ulong DICT_CUTOFF, State *state = 0) const;
   void tag(NLP::IO::Reader &reader, NLP::IO::Writer &writer,
-	   Algorithm alg, ulong DICT_CUTOFF) const;
+           Algorithm alg, ulong DICT_CUTOFF) const;
 
   void mtag(Sentence &sent, Algorithm alg, const ulong DICT_CUTOFF, double BETA, State *state = 0) const;
   void mtag(NLP::IO::Reader &reader, NLP::IO::Writer &writer, Algorithm alg,
-	    const ulong DICT_CUTOFF, double BETA) const;
+            const ulong DICT_CUTOFF, double BETA) const;
 
   Impl(const std::string &name, Tagger::Config &config);
   virtual ~Impl(void);
@@ -217,6 +219,21 @@ Tagger::Impl::add_surrounding_words(const OffsetWords &words, ulong i, PDF &dist
   _add_attribute(w_attribs(Types::ppw, words[i - 2]), dist);
   _add_attribute(w_attribs(Types::nw, words[i + 1]), dist);
   _add_attribute(w_attribs(Types::nnw, words[i + 2]), dist);
+
+  // TODO: Move these into their own functions
+  _add_attribute(ww_attribs(Types::pppw_ppw_b, words[i - 3], words[i - 2]), dist);
+  _add_attribute(ww_attribs(Types::ppw_pw_b, words[i - 2], words[i - 1]), dist);
+  _add_attribute(ww_attribs(Types::pw_w_b, words[i - 1], words[i]), dist);
+  _add_attribute(ww_attribs(Types::pw_nw_b, words[i - 1], words[i + 1]), dist);
+  _add_attribute(ww_attribs(Types::w_nw_b, words[i], words[i + 1]), dist);
+  _add_attribute(ww_attribs(Types::nw_nnw_b, words[i + 1], words[i + 2]), dist);
+  _add_attribute(ww_attribs(Types::nnw_nnnw_b, words[i + 2], words[i + 3]), dist);
+
+  _add_attribute(www_attribs(Types::pppw_ppw_pw_c, words[i - 3], words[i - 2], words[i - 1]), dist);
+  _add_attribute(www_attribs(Types::ppw_pw_w_c, words[i - 2], words[i - 1], words[i]), dist);
+  _add_attribute(www_attribs(Types::pw_w_nw_c, words[i - 1], words[i], words[i - 1]), dist);
+  _add_attribute(www_attribs(Types::w_nw_nnw_c, words[i], words[i + 1], words[i + 2]), dist);
+  _add_attribute(www_attribs(Types::nw_nnw_nnnw_c, words[i + 1], words[i + 2], words[i + 3]), dist);
 }
 
 // add the previously assigned tag (in the current path through the lattice)
@@ -305,8 +322,8 @@ Tagger::Impl::_build_lattice(State &state, const ulong DICT_CUTOFF) const {
     ulong prev_prev_permit = lattice.permitted[i - 2];  // permitted tags 2 words back
     for(Tags::const_iterator j = permit->begin(); j != permit->end(); ++j){
       for(ulong k = 0; k < lattice[i - 1].size(); k += prev_prev_permit){  // previous column
-	FNode *node = lattice.create(lattice[i - 1][k], *j, lattice[i - 1][k]->id, 0.0, 0.0);
-	lattice[i].push_back(node); // adding node to current column
+        FNode *node = lattice.create(lattice[i - 1][k], *j, lattice[i - 1][k]->id, 0.0, 0.0);
+        lattice[i].push_back(node); // adding node to current column
       }
     }
   }
@@ -358,7 +375,7 @@ Tagger::Impl::_forward(Flattice &lattice, const double BETA) const {
     // loop over history nodes and equivalents
     for(ulong j = 0; j < prev_col.size(); ++j){
       if(!prev_col[j]->forward)
-	continue;
+        continue;
 
       copy(curr_pdf.begin(), curr_pdf.end(), pdf.begin());
       FNode *hist = prev_col[j];
@@ -369,8 +386,8 @@ Tagger::Impl::_forward(Flattice &lattice, const double BETA) const {
       // pass the forward scores to current column
       // note the integer division
       for(ulong l = j / prev_prev_permit; l < curr_col.size(); l += prev_permit){ 
-	FNode *current = curr_col[l];
-	current->forward += pdf[current->id.value()] * hist->forward;
+        FNode *current = curr_col[l];
+        current->forward += pdf[current->id.value()] * hist->forward;
       }
     }
   }
@@ -397,8 +414,8 @@ Tagger::Impl::_backward(Flattice &lattice) const {
     // loop over history nodes and equivalents
     for(ulong j = 0; j < prev_col.size(); ++j){
       if(!prev_col[j]->forward){
-	prev_col[j]->backward = 0.0;
-	continue;
+        prev_col[j]->backward = 0.0;
+        continue;
       }
 
       copy(curr_pdf.begin(), curr_pdf.end(), pdf.begin());
@@ -408,8 +425,8 @@ Tagger::Impl::_backward(Flattice &lattice) const {
       
       // get the backward scores from current column
       for(ulong l = j / prev_prev_permit; l < curr_col.size(); l += prev_permit){  // integer division
-	FNode *current = curr_col[l];
-	hist->backward += pdf[current->id.value()] * current->backward;
+        FNode *current = curr_col[l];
+        hist->backward += pdf[current->id.value()] * current->backward;
       }
     }
   }
@@ -465,8 +482,8 @@ Tagger::Impl::_calc_greedy_probs(State &state, const ulong DICT_CUTOFF, const do
     double max_tag_prob = 0;
     for(ushort j = 2; j < dist.size(); ++j)
       if(max_tag_prob < dist[j]){
-	max_tag = j;
-	max_tag_prob = dist[j];
+        max_tag = j;
+        max_tag_prob = dist[j];
       }
 
     hist.pid = hist.id;
@@ -477,7 +494,7 @@ Tagger::Impl::_calc_greedy_probs(State &state, const ulong DICT_CUTOFF, const do
 
 inline void
 Tagger::Impl::_unpack_mtags(State &state, MultiRaws &mraws, const double BETA,
-			    bool RECORD) const {
+                            bool RECORD) const {
   mraws.resize(state.raws.size());
 
   for(ulong i = 0; i < state.raws.size(); ++i){
@@ -489,8 +506,8 @@ Tagger::Impl::_unpack_mtags(State &state, MultiRaws &mraws, const double BETA,
     for(ulong j = 2; j < dist.size(); ++j){
       total_mass += dist[j];
       if(prob_cutoff < dist[j]){
-	prob_cutoff = dist[j];
-	max_klass = j;
+        prob_cutoff = dist[j];
+        max_klass = j;
       }
     }
     prob_cutoff *= BETA;
@@ -502,7 +519,7 @@ Tagger::Impl::_unpack_mtags(State &state, MultiRaws &mraws, const double BETA,
 
     for(ushort j = 2; j < dist.size(); ++j)
       if(dist[j] >= prob_cutoff)
-	mraw.push_back(ScoredRaw(klasses[j], dist[j]/total_mass));
+        mraw.push_back(ScoredRaw(klasses[j], dist[j]/total_mass));
 
     std::sort(mraw.begin(), mraw.end());
   }
@@ -544,7 +561,7 @@ Tagger::Impl::_mtag(Sentence &sent, State &state, Algorithm alg, ulong DICT_CUTO
 
 inline void
 Tagger::Impl::tag(NLP::Sentence &sent, const Algorithm alg,
-		  const ulong DICT_CUTOFF, State *state) const {
+                  const ulong DICT_CUTOFF, State *state) const {
   if(state)
     _tag(sent, *state, alg, DICT_CUTOFF);
   else{
@@ -555,11 +572,13 @@ Tagger::Impl::tag(NLP::Sentence &sent, const Algorithm alg,
 
 inline void
 Tagger::Impl::tag(NLP::IO::Reader &reader, NLP::IO::Writer &writer,
-		  const Algorithm alg, const ulong DICT_CUTOFF) const {
+                  const Algorithm alg, const ulong DICT_CUTOFF) const {
   NLP::Sentence sent;
   State state(klasses.size(), maxwords);
 
   while(reader.next(sent)){
+    if(sent.words.size() == 0)
+      state.begin_document();
     _tag(sent, state, alg, DICT_CUTOFF);
     writer.next(sent);
   }
@@ -567,8 +586,8 @@ Tagger::Impl::tag(NLP::IO::Reader &reader, NLP::IO::Writer &writer,
 
 inline void
 Tagger::Impl::mtag(Sentence &sent, const Algorithm alg,
-		   const ulong DICT_CUTOFF, const double BETA,
-		   State *state) const {
+                   const ulong DICT_CUTOFF, const double BETA,
+                   State *state) const {
   if(state)
     _mtag(sent, *state, alg, DICT_CUTOFF, BETA);
   else{
@@ -579,12 +598,14 @@ Tagger::Impl::mtag(Sentence &sent, const Algorithm alg,
 
 inline void
 Tagger::Impl::mtag(NLP::IO::Reader &reader, NLP::IO::Writer &writer,
-		   const Algorithm alg, const ulong DICT_CUTOFF,
-		   const double BETA) const {
+                   const Algorithm alg, const ulong DICT_CUTOFF,
+                   const double BETA) const {
   NLP::Sentence sent;
   State state(klasses.size(), maxwords);
 
   while(reader.next(sent)){
+    if(sent.words.size() == 0)
+      state.begin_document();
     _mtag(sent, state, alg, DICT_CUTOFF, BETA);
     writer.next(sent);
   }

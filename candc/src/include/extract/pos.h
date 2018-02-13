@@ -13,7 +13,7 @@
 // extracts features from POS tagged training data
 // saves the extracted model into the specified model directory
 // which is then loaded by NLP::MaxEnt::GIS for estimating
-// the parameters of the model, and NLP::Tagger::POS for tagging
+// the parameters of the model, and NLP::Taggers::POS for tagging
 
 namespace NLP {
   namespace Extract {
@@ -31,7 +31,7 @@ namespace NLP {
       NLP::Lexicon lexicon(void) const;	// lexicon produced
 
       // configuration information for extracting the model
-      POS(NLP::Tagger::POS::Config &cfg, const std::string &preface, bool verbose);
+      POS(NLP::Taggers::POS::Config &cfg, const std::string &preface, bool verbose);
       // shared, reference counted copy constructor
       POS(const POS &other);
 

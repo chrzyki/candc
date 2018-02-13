@@ -52,6 +52,8 @@ namespace NLP {
       const Cell &operator()(Position pos, Position span) const { return cell(pos, span); }
       Cell &operator()(Position pos, Position span){ return cell(pos, span); }
 
+      // adds SuperCat to cell if no equivalence class exists
+      // otherwise adds to existing equivalence class
       void add(Position pos, Position span, SuperCat *sc){
         if(equiv.add(pos, span, sc))
           cell(pos, span).add(sc);
@@ -60,6 +62,16 @@ namespace NLP {
       void add(Position pos, Position span, SuperCats &scs){
         for(SuperCats::iterator i = scs.begin(); i != scs.end(); ++i)
           add(pos, span, *i);
+      }
+
+      // add a SuperCat to a leaf cell if no equivalence class exists
+      // otherwise adds to existing equivalence class
+      // but only if the exact lexical item has not already been added
+      // i.e. it checks more than just equivalence
+      void create(Pool *pool, Position pos, const Cat *cat){
+				if(cell(pos, 1).has_leaf(cat))
+					return;
+				add(pos, 1, SuperCat::Lexical(pool, pos+1, cat, 0));
       }
 
       Cell tmp;
@@ -86,10 +98,21 @@ namespace NLP {
       void tr(Position pos, Position span);
       bool gen_tr(SuperCat *TBsc, SuperCat *TBscRes, Cell &cell);
 
-      bool load(const Sentence &sent, double BETA, bool lexTR, bool qu_parsing);
+			void set_constraint(const Constraint &c);
+
+      bool load(const Sentence &sent, double BETA, bool repair,
+								bool lexTR, bool qu_parsing);
 
       ulong build_tree(const TBSentence &sentence, ulong &node, ulong pos);
       bool load(const TBSentence &sentence);
+
+      void dump(std::ostream &out) const;
+
+      void mark(void){
+				for(ulong i = 0; i < ncells; ++i)
+					cells[i].mark();
+      }
+
       void reset(void){
         equiv.clear();
         pool->clear();

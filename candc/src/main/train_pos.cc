@@ -18,5 +18,5 @@ const char *PROGRAM_NAME = "train_pos";
 
 int
 run(int argc, char **argv){
-  return run_train<Tagger::POS, Extract::POS>("%w|%p \n", argc, argv);
+  return run_train<Taggers::POS, Extract::POS>("%w|%p \n", argc, argv);
 }

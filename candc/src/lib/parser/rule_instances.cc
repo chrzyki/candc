@@ -45,29 +45,23 @@ using namespace NLP::CCG;
 class _RuleInstEntry {
 public:
   static Hash hash(const Cat *cat1, const Cat *cat2){
-    Hash h(cat1->rhash); // note rhash
-    h += cat2->rhash;
-    return h;
+    return Hash((cat1->rhash.value() ^ cat1->rhash.value()*37) + cat2->rhash.value());
   }
 
-  const Cat *_cat1;
-  const Cat *_cat2;
+  const Hash _h1;
+  const Hash _h2;
 
   _RuleInstEntry *_next;
 public:
   _RuleInstEntry(const Cat *cat1, const Cat *cat2, _RuleInstEntry *next):
-    _cat1(cat1), _cat2(cat2), _next(next) {}
+    _h1(cat1->rhash), _h2(cat2->rhash), _next(next) {}
   ~_RuleInstEntry(void) {}
 
   void *operator new(size_t size, Pool *pool) { return (void *)pool->alloc(size); }
-  void operator delete(void *, Pool *pool) { /* do nothing */ }
-
-  const Cat *cat1(void) const { return _cat1; }
-  const Cat *cat2(void) const { return _cat2; }
+  void operator delete(void *, Pool *) { /* do nothing */ }
 
   bool equal(const Cat *cat1, const Cat *cat2){
-    // rule_eq checks the feature but ignores variable features (X)
-    return rule_eq(cat1, _cat1) && rule_eq(cat2, _cat2);
+    return cat1->rhash == _h1 && cat2->rhash == _h2;
   }
 
   bool find(const Cat *cat1, const Cat *cat2){
@@ -86,7 +80,7 @@ public:
 typedef Frame<_RuleInstEntry, MEDIUM, LARGE> _ImplBase;
 class RuleInstances::_Impl: public _ImplBase, public Shared {
 public:
-  _Impl(const string &name): _ImplBase(name) {}
+  _Impl(const string &name): _ImplBase(name){}
   virtual ~_Impl(void) {}
 
   void insert(const Cat *cat1, const Cat *cat2){
@@ -96,8 +90,8 @@ public:
   }
 
   bool find(const Cat *cat1, const Cat *cat2) const {
-    Hash hash = Entry::hash(cat1, cat2);
-    return _buckets[hash % _NBUCKETS]->find(cat1, cat2);
+    ulong bucket = Entry::hash(cat1, cat2) % _NBUCKETS;
+    return _buckets[bucket]->find(cat1, cat2);
   }
 };
 
@@ -115,7 +109,12 @@ RuleInstances::size(void) const {
 
 bool
 RuleInstances::get(const Cat *cat1, const Cat *cat2) const {
-  return _impl->find(cat1, cat2);
+  if(_impl->find(cat1, cat2)){
+    //    cat1->out_novar_noX(cerr, false) << ' ';
+    //    cat2->out_novar_noX(cerr, false) << endl;
+    return true;
+  }
+  return false;
 }
 
 void

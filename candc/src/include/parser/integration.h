@@ -14,7 +14,7 @@ namespace NLP {
   namespace CCG {
 
     using namespace NLP::Config;
-    using namespace NLP::Tagger;
+    using namespace NLP::Taggers;
 
     class Integration {
     public:
@@ -53,6 +53,10 @@ namespace NLP {
       ulong nfail_nospan_explode;
       ulong nfail_explode_nospan;
 
+      ulong nrepairs;
+
+      Statistics global_stats;
+
       std::vector<ulong> nsuccesses;
 
       Integration(Integration::Config &int_cfg,
@@ -61,9 +65,12 @@ namespace NLP {
 		  Sentence &sent,
 		  ulong load = Parser::LOAD_WEIGHTS);
 
-      ~Integration(void){ /* do nothing */ }
+      ~Integration(void);
 
       bool parse(Sentence &sent, Decoder &decoder, Printer &printer, bool USE_SUPER = true);
+
+    protected:
+      Taggers::State *const super_state;
     };
 
   }

@@ -21,8 +21,12 @@
 
 #include "model/types.h"
 
+#include "model/registry.h"
+
 #include "extract/feature.h"
 #include "extract/attributes.h"
+
+#include "cluster.h"
 
 #include "share.h"
 
@@ -56,11 +60,11 @@ public:
     return hash;
   }
 
-  static _AttributeEntry *create(Pool *pool, const string &str,
-				 ulong, NLP::Hash, _AttributeEntry *next){ return 0; }
+  static _AttributeEntry *create(Pool *, const string &,
+				 ulong, NLP::Hash, _AttributeEntry *){ return 0; }
   static _AttributeEntry *create(Pool *pool, const char *type,
 				 const string &str, _AttributeEntry *next){
-    _AttributeEntry *entry = new (pool, str.size()) _AttributeEntry(type, next);
+    _AttributeEntry *entry = new (pool, get_remainder(str.size())) _AttributeEntry(type, next);
     strcpy(entry->str, str.c_str());
     return entry;
   }
@@ -70,12 +74,24 @@ public:
   ulong value;
   Features features;
   const char *type;
-  char str[0];
+  char str[MIN_STR_BUFFER];
+
+  void update_counts(void){
+    value = 0;
+    for(Features::iterator i = features.begin(); i != features.end(); ++i)
+      value += i->freq;
+  }
+
+  void update_features(const Feature *feats, ulong nfeats){
+    features.assign(feats, feats + nfeats);
+    update_counts();
+  }
 
   void insert(Tag tag){
     features.push_back(Feature(tag, 1));
     ++value;
   }
+
   void inc(Tag tag){
     for(Features::iterator i = features.begin(); i != features.end(); ++i)
       if(i->tag == tag){
@@ -102,8 +118,8 @@ public:
   bool find(const char *type, const string &str, ulong &id) const {
     for(const _AttributeEntry *l = this; l; l = l->next)
       if(l->equal(type, str) && l->value){
-        id = l->index;
-        return true;
+        id = l->index - 1;
+        return l->index != 0;
       }
 
     return false;
@@ -124,20 +140,23 @@ public:
 
   // dump the attribute information
   void save_attributes(ostream &stream) const {
+    assert(index != 0);
     stream << type << ' ' << str << ' ' << value << '\n';
   }
 
   // sort the features by class and then dump
   void save_features(ostream &stream){
+    assert(index != 0);
     sort(features.begin(), features.end(), FeatureCmp());
     for(Features::const_iterator i = features.begin(); i != features.end(); ++i)
       // skip features with frequency zero (i.e. those below the cutoff)
       if(i->freq)
-        stream << i->tag.value() << ' ' << index << ' ' << i->freq << '\n';
+        stream << i->tag.value() << ' ' << (index - 1) << ' ' << i->freq << '\n';
   }
 
   // calculate the total number of features by type
   ulong nfeatures(void) const {
+    assert(index != 0);
     ulong total = 0;
     for(Features::const_iterator i = features.begin(); i != features.end(); ++i)
       if(i->freq)
@@ -149,6 +168,28 @@ public:
   ulong nchained(void){
     return next ? next->nchained() + 1 : 1;
   }
+  
+  void map_load(Cluster::KeyValue *kv) const {
+    for(Features::const_iterator i = features.begin(); i != features.end(); ++i){
+      if(i->freq == 0)
+        continue;
+      ostringstream oss;
+      oss << i->tag.value() << ' ' << type << ' ' << str;
+      kv->add(oss.str(), i->freq);
+    }
+  }
+};
+
+template <class E>
+class RevAttribCmp {
+public:
+  bool operator ()(const E *const e1, const E *const e2){
+    if(e1->value != e2->value)  
+      return e1->value > e2->value;
+    if(e1->type != e2->type)
+      return strcmp(e1->type, e2->type) == -1;
+    return strcmp(e1->str, e2->str) == -1;
+  }
 };
 
 // use the hash table that supports countable entries
@@ -157,8 +198,11 @@ typedef Ordered<_AttributeEntry, const string &, MEDIUM, LARGE> _ImplBase;
 // private implementation, which is a shared hash table
 class Attributes::_Impl: public _ImplBase, public Shared {
 public:
-  _Impl(const string &name)
-    : _ImplBase(name){}
+  Registry registry;
+  TagSet klasses;
+
+  _Impl(const string &name, const Registry &registry, const TagSet &klasses)
+    : _ImplBase(name), registry(registry), klasses(klasses){}
   virtual ~_Impl(void) { /* do nothing */ };
 
   void add(const char *type, const string &value, Tag tag){
@@ -173,6 +217,33 @@ public:
     ++size;
 
     entry->insert(tag);
+  }
+
+  void update_features(const char *type, const std::string value, 
+              const Feature *feats, ulong nfeats){
+    ulong bucket = Entry::hash(type, value) % NBUCKETS_;
+    Entry *entry = buckets_[bucket]->find(type, value);
+    if(!entry){
+      entry = Entry::create(pool_, type, value, buckets_[bucket]);
+      buckets_[bucket] = entry;
+      entries.push_back(entry);
+      ++size;
+    }
+    entry->update_features(feats, nfeats);
+  }
+
+  void update_index(const char *type, const std::string value, ulong index){
+    ulong bucket = Entry::hash(type, value) % NBUCKETS_;
+    Entry *entry = buckets_[bucket]->find(type, value);
+    if(!entry)
+      return;
+    entry->index = index;
+  }
+
+  void filter_indices(void){
+    for(Entries::iterator i = entries.begin(); i != entries.end(); ++i)
+      if((*i)->index == 0)
+        (*i) = 0;
   }
 
   bool find(const char *type, const string &value, ulong &id){
@@ -205,6 +276,12 @@ public:
         (*i) = 0;
   }
 
+  void apply_attrib_cutoff(const ulong freq){
+    for(Entries::iterator i = entries.begin(); i != entries.end(); ++i)
+      if((*i)->value < freq)
+        (*i) = 0;
+  }
+
   // dump out the current list of attributes to a given filename
   void save_attributes(const string &filename, const string &PREFACE) const {
     ofstream stream(filename.c_str());
@@ -232,11 +309,122 @@ public:
       total += (*i)->nfeatures();
     return total;
   }
+
+  void sort_by_rev_attrib_freq(void){ sort(RevAttribCmp<Entry>()); renumber(); };
+  
+  static void map_load(int, Cluster::KeyValue *kv, void *ptr){
+    Attributes::_Impl *impl = reinterpret_cast<Attributes::_Impl *>(ptr);
+    string s;
+
+    for(ulong i = 0; i != impl->entries.size(); ++i){
+      Entry *e = impl->entries[i];
+      if(!e)
+	      continue;
+	    e->map_load(kv);
+    }
+  }
+
+  static void reduce_sum(char *key, int keybytes, char *multivalue,
+			 int nvalues, int *, Cluster::KeyValue *kv, void *){
+    const ulong *counts = reinterpret_cast<ulong *>(multivalue);
+    ulong total = 0;
+    for(int i = 0; i != nvalues; ++i)
+      total += counts[i];
+    kv->add(key, keybytes, total);
+  }
+
+  static void reduce_mv2v(char *key, int keybytes, char *multivalue,
+               int nvalues, int *, Cluster::KeyValue *kv, void *){
+    kv->add(key, keybytes, multivalue, nvalues*sizeof(Feature));
+  }
+
+  static void map_update(int, char *key, int, char *value,
+			 int valuebytes, Cluster::KeyValue *, void *ptr){
+    Attributes::_Impl *impl = reinterpret_cast<Attributes::_Impl *>(ptr);
+    const Feature *feats = reinterpret_cast<Feature *>(value);
+    ulong nfeats = valuebytes/sizeof(Feature);
+    
+    char *attrib = strchr(key, ' ');
+    *attrib++ = '\0';
+    const char *type = impl->registry.canonize(key);
+    impl->update_features(type, attrib, feats, nfeats);
+  }
+
+  static void map_klass_k2v(int, char *key, int keybytes, char *value,
+			    int, Cluster::KeyValue *kv, void *){
+    char *newkey = 0;
+    Tag tag(strtoul(key, &newkey, 10));
+    assert(*newkey++ == ' ');
+    Feature feat(tag, *reinterpret_cast<ulong *>(value));
+    kv->add(newkey, keybytes - (newkey - key), feat);
+  }
+
+  void merge(void);
+
+  void pack_index(Cluster::Counts &counts){
+    for(ulong i = 0; i != entries.size(); ++i){
+      Entry *e = entries[i];
+      if(!e)
+	      continue;
+      std::string key = e->type;
+      key += ' ';
+      key += e->str;
+      counts.push_back(make_pair(key, e->index));
+    }
+  }
+
+  void unpack_index(Cluster::Counts &counts){
+    for(Cluster::Counts::iterator i = counts.begin(); i != counts.end(); ++i){
+      string::size_type loc = i->first.find(' ');
+      std::string key = i->first.substr(0, loc);
+      std::string attrib = i->first.substr(loc + 1);
+      const char *type = registry.canonize(key.c_str());
+      update_index(type, attrib, i->second);
+    }
+    filter_indices();
+    compact();
+  }
+ 
+  void bcast_indices(void){
+    if(!Cluster::USE_MPI)
+      return;
+    Cluster::Counts counts;
+    if(Cluster::rank == 0)
+      pack_index(counts);
+    Cluster::bcast(counts);
+    if(Cluster::rank != 0)
+      unpack_index(counts);
+  }
+
+  void renumber(void){
+    for(ulong i = 0; i != entries.size(); ++i)
+      entries[i]->index = i + 1;
+  }
 };
 
 // public wrappers for the private implementation
 
-Attributes::Attributes(const string &name): _impl(new _Impl(name)) {}
+void
+Attributes::_Impl::merge(void){
+  if(Cluster::size == 1)
+    return;
+
+  Cluster::MapReduce mr;
+
+  mr.map(Cluster::size, map_load, this);
+
+  mr.collate();
+  mr.reduce(reduce_sum, 0);
+  mr.map(mr.kv(), map_klass_k2v, 0);
+  mr.collate();
+  mr.reduce(reduce_mv2v, 0);
+  mr.gather(1);
+  mr.map(mr.kv(), map_update, this);
+}
+
+Attributes::Attributes(const string &name, const Model::Registry &registry,
+                       const TagSet &klasses)
+  : _impl(new _Impl(name, registry, klasses)) {}
 Attributes::Attributes(const Attributes &other): _impl(share(other._impl)){}
 
 Attributes &
@@ -279,6 +467,14 @@ Attributes::operator()(Context &context, const Type &type, const string &v1,
 }
 
 void
+Attributes::operator()(Context &context, const Type &type, const string &v1,
+		       const string &v2, const string &v3) const {
+  ulong id;
+  if(_impl->find(type.id, v1 + ' ' + v2 + ' '+ v3, id))
+    context.push_back(id);
+}
+
+void
 Attributes::operator()(Tag klass, const Type &type, const string &value){
   _impl->add(type.id, value, klass);
 }
@@ -286,6 +482,11 @@ Attributes::operator()(Tag klass, const Type &type, const string &value){
 void
 Attributes::operator()(Tag klass, const Type &type, const string &v1, const string &v2){
   _impl->add(type.id, v1 + ' ' + v2, klass);
+}
+
+void
+Attributes::operator()(Tag klass, const Type &type, const string &v1, const string &v2, const string &v3){
+  _impl->add(type.id, v1 + ' ' + v2 + ' ' + v3, klass);
 }
 
 ulong
@@ -309,12 +510,27 @@ Attributes::apply_cutoff(const Type &type, ulong freq, ulong def){
 }
 
 void
+Attributes::apply_attrib_cutoff(ulong freq){
+  _impl->apply_attrib_cutoff(freq);
+}
+
+void
+Attributes::merge(void){
+  _impl->merge();
+}
+
+void
+Attributes::bcast_indices(void){
+  _impl->bcast_indices();
+}
+
+void
 Attributes::save(const string &attributes, const string &features, const string &PREFACE){
   // eliminate zero entries
   _impl->compress();
   // put the most frequent attributes first
   // and setup the attribute index values
-  _impl->sort_by_rev_value();
+  _impl->sort_by_rev_attrib_freq();
   // dump out the attributes
   _impl->save_attributes(attributes, PREFACE);
   // dump out the features

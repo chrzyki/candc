@@ -11,6 +11,7 @@
 #include "base.h"
 
 #include <cerrno>
+#include <fpu_control.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -37,5 +38,13 @@ get_usage(void){
 
   return usage*getpagesize();
 }
+
+
+void
+setup_fpu(void) {
+  fpu_control_t cw = 0x1372;
+  _FPU_SETCW(cw);
+}
+
 
 } }

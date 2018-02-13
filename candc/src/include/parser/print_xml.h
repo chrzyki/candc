@@ -20,15 +20,19 @@ namespace NLP {
 
       virtual void unary(Sentence &sent);
       virtual void derivation(const SuperCat *sc, Sentence &sent);
+
+			std::ostringstream deps;
     public:
       XMLPrinter(Categories &cats, const Format FORMAT,
-		 IO::Output &out, IO::Log &log)
-	: StreamPrinter(cats, FORMAT, out, log){}
+								 IO::Output &out, IO::Log &log)
+				: StreamPrinter(cats, FORMAT, out, log){}
 
       virtual ~XMLPrinter(void){ /* do nothing */ }
 
       virtual void header(const std::string &PREFACE);
       virtual void footer(void);
+      virtual void error(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF);
+      virtual void failed(const std::string &REASON, Sentence &sent, double BETA, ulong DICT_CUTOFF);
     };
 
   }

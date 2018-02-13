@@ -9,9 +9,11 @@
 // please email candc@it.usyd.edu.au to obtain a copy.
 
 #include "base.h"
+#include "cluster.h"
 
 #include <valarray>
 #include <deque>
+#include <cstring>
 
 using namespace std;
 
@@ -58,7 +60,13 @@ BFGS::llhood(void){
     _estimate(*context, p_classes);
     result += (*context)->llhood(p_classes);
   }
-  assert(!isnan(result));
+  // Add up the result values for all the contexts (distributed over the nodes)
+  assert(!std::isnan(result));
+
+  if(Cluster::USE_MPI)
+    Cluster::sum(result);
+
+  _sum_estimates();
 
   return result;
 }

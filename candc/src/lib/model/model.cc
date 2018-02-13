@@ -40,30 +40,36 @@ Info::Info(const std::string &filename)
   load(in, filename);
 }
 
-Model::Model(const std::string &name, const OpPath &path, double SIGMA, ulong NITER,
-	     Flags flags, ushort order)
+Model::Model(const std::string &, const OpPath &path, double SIGMA, ulong NITER, Flags flags, ushort order)
   : Cfg("model", "maximum entropy model", SPACE | flags, order),
     path(path),
     comment(*this, "comment", "an explanatory comment for the model"),
     data(*this, "data", "the path to the original training data file"),
-    solver(*this, "solver", "the maximum entropy model solver [gis, bfgs]", "gis"),
+    solver(*this, "solver", "the maximum entropy model solver [gis, bfgs, perceptron]", "gis"),
     update(*this, "smoothing", "the smoothing method [none, gaussian]", "gaussian"),
     sigma(*this, "sigma", "the smoothing parameter", SIGMA),
     niterations(*this, "niterations", "the number of interations the solver should perform", NITER),
-    weights(*this, "weights", "the weights file path", "//weights", &path){}
+    merge_contexts(*this, "merge_contexts", "merge duplicate contexts before estimation", true),
+    sort_contexts(*this, "sort_contexts", "sort contexts before estimation", true),
+    shuffle_contexts(*this, "shuffle_contexts", "shuffle contexts during estimation", false),
+    one_per_context(*this, "one_per_context", "give all contexts equal weight, including repetitions", false),
+    weights(*this, "weights", "the weights file path", "//weights", &path),
+    temp_dir(*this, "temp_dir", "where to store temporary files", "/tmp"),
+    split_input(*this, "split_input", "when reading the contexts file, only keep a fraction of the lines", true),
+    dist_input(*this, "dist_input", "data files are already distributed by rank", false){}
 
 void
 Model::check(void){
   Cfg::check();
-  if(solver() != "gis" && solver() != "bfgs")
-    throw ConfigError("the solver option must be one of [gis, bfgs]", solver.NAME);
+  if(solver() != "gis" && solver() != "bfgs" && solver() != "perceptron")
+    throw ConfigError("the solver option must be one of [gis, bfgs, perceptron]", solver.NAME);
   if(update() != "none" && update() != "gaussian")
     throw ConfigError("the smoothing option must be one of [none, gaussian]", update.NAME);
 }
 
 Config::Config(const std::string &name, const std::string &desc,
 	       const OpPath *base, Mode mode, double SIGMA, ulong NITER)
-  : Directory(name, desc, base, mode == TRAIN ? SHOW_ALL | IGNORE_MISSING : SHOW_ALL),
+  : Directory(name, desc, base, mode == TRAIN ? IGNORE_MISSING : (mode == ESTIMATE ? IGNORE_ADDITIONAL : SHOW_ALL)),
     model(name, path, SIGMA, NITER, mode == DECODE ? (HIDE_HELP | HIDE_CONFIG) : SHOW_ALL){
   reg(model);
 }

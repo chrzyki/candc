@@ -133,6 +133,7 @@ Categories::_read_markedup(const std::string &filename, const bool ALT_MARKEDUP)
     throw NLP::IOException("could not read markedup entry", filename);
 
   relations.set_constraints(*this);
+  relations.set_cats(*this);
 }
 
 void
@@ -261,7 +262,7 @@ Categories::_consume_complex(const char *&current, const char *orig,
 }
 
 Feature
-Categories::_consume_feature(const char *&current, const char *orig){
+Categories::_consume_feature(const char *&current, const char *){
   std::string feature_str;
   while(isalpha(*current))
     feature_str += *current++;
@@ -274,7 +275,7 @@ Categories::_consume_feature(const char *&current, const char *orig){
 }
 
 VarID
-Categories::_consume_var(const char *&current, const char *orig, CatID &lrange){
+Categories::_consume_var(const char *&current, const char *, CatID &lrange){
   std::string head_str;
   while(isalpha(*current) || *current == '_')
     head_str += *current++;
@@ -320,6 +321,30 @@ Categories::canonize(const Cat *cat){
   concat = Cat::Clone(&pool, cat);
   canonical.add(concat);
   return concat;
+}
+
+const Constraint *
+Categories::constraint(const std::string &s){
+	istringstream in(s);
+	int pos, span;
+	string type, catstr;
+	const Cat *cat = 0;
+
+	cerr << "constraint: " << s << endl;
+	if(!(in >> type >> pos >> span))
+		throw Exception("failed to parse constraint " + s);
+
+	if(type == "match"){
+		if(!(in >> catstr))
+			throw Exception("failed to read category in match constraint " + s);
+		cat = markedup[catstr];
+		if(!cat)
+			throw NLP::ParseError("attempted to use category without markedup in constraint " + s);
+		cerr << "loaded category " << *cat << " from constraint " << s << endl;
+	}else if(type != "require" && type != "exclude")
+		throw Exception("unrecognised type of constraint " + s);
+
+	return new Constraint(pos - 1, span, type == "require", type == "exclude", cat);
 }
 
 } }

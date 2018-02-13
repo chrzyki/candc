@@ -1767,9 +1767,9 @@ S\NP
 
 ((S[b]\NP)/S[qem])/NP
   3 (((S[b]{_}\NP{Y}<1>){_}/S[qem]{Z}<2>){_}/NP{W}<3>){_}
-  1 ncsubj
-  2 ccomp
-  3 dobj
+  1 ncsubj %l %f _
+  2 ccomp %f %l %c =S[em]/S[dcl]
+  3 dobj %l %f
 
 ((S[b]\NP)/S[em])/NP
   3 (((S[b]{_}\NP{Y}<1>){_}/S[em]{Z}<2>){_}/NP{W}<3>){_}
@@ -2373,7 +2373,7 @@ S/(S[dcl]\NP)
 ((S[dcl]\NP[expl])/S[dcl])/(S[adj]\NP)
   3 (((S[dcl]{_}\NP[expl]{Y}<1>){_}/S[dcl]{Z}<2>){_}/(S[adj]{W}<3>\NP{V}){W}){_}
   1 ncsubj %l %f _
-  2 (ccomp _ %3 %f # "it is doubtful any collaboration will take place"
+  2 ccomp _ %3 %f # "it is doubtful any collaboration will take place"
   3 xcomp _ %l %f
 
 ((S[b]\NP)/S[for])/NP
@@ -2719,7 +2719,7 @@ S[as]/S[poss]
 ((NP\NP)/N)\NP
   3 (((NP{Y}\NP{Y}<1>){_}/N{Z}<2>){_}\NP{W}<3>){_}
   1 ncmod _ %f %3
-  2 poss %f %3
+  2 ncmod poss %f %3
 
 ((N\N)\(N\N))/NP
   2 (((N{Y}\N{Y}){Z}\(N{Y}\N{Y}){Z}<2>){_}/NP{W}<1>){_}
