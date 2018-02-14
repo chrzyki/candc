@@ -45,8 +45,8 @@ namespace NLP {
 
       bool equal(const Word word){ return word == this->str; }
 
-      bool equal(const std::string &str, const Hash hash){
-	return hash == this->hash && str == this->str;
+      bool equal(const std::string &str, const Hash hash) {
+        return hash == this->hash && str == this->str;
       }
 
       WordEntry *find(const Word word, const Hash){
