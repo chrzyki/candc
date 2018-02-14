@@ -18,6 +18,10 @@ The project page went down sometime in early 2016. Ever since then, here and the
 
 In this repository I want to provided access to the original release sources and all the changes that were pushed to the SVN trunk but never made it into an official release. Also, potentially, I'd like to include my own changes to the C&C sources. Here, with much gratitude, many thanks to [texttheater](https://github.com/texttheater), who provided the sources to the **2614M** SVN version of C&C.
 
+For the push to the 2614M SVN version I also included all *.out and *.o files. These were in the original SVN tree and I decided to add them for the sake of completeness.
+
+See the [releases section](https://github.com/chrzyki/candc/releases) for a preserved original state of the sources.
+
 # License
 
 The original license is included. I'd be very grateful for any help with making it compatible (or checking compatibility in the first place) with a modern (and not hand-tailored) license.
