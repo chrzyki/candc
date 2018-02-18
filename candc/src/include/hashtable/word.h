@@ -45,6 +45,8 @@ namespace NLP {
 
       bool equal(const Word word){ return word == this->str; }
 
+      // TODO: When/how is this used?
+      // TODO: Word to str comparison is not properly implemented.
       bool equal(const std::string &str, const Hash hash) {
         return hash == this->hash && str == this->str;
       }
