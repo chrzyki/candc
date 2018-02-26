@@ -8,4 +8,3 @@ role('Attribute','Undergoer that is a property of an entity.').
 role('Beneficiary','Undergoer in a state or an event that is potentially advantaged or disadvantaged by it.').
 role('Cause',''0.
 role('Partner','').
-
