@@ -1,4 +1,3 @@
-
 import colours
 
 def explicit_punct_conj(node):
