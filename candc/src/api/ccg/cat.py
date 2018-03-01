@@ -1,4 +1,3 @@
-
 import re
 CAT_RE = re.compile(r'([\\/()])(?:\{([A-Z_]\*?)\})?|(?:([A-Z]+|[.,;:]|conj)(?:\[([Xa-z]+)\])?(?:\{([A-Z_]\*?)\})?(?:<([0-9])>)?)')
 del re
@@ -81,4 +80,3 @@ class Complex(Cat):
 
 EG1 = r'((S[X]{Y}\NP{Z}){Y}/(S[X]{Y}<1>\NP{Z}){Y}){_}'
 EG2 = r'((S[dcl]{Y}\NP{Z}){Y}/(S[b]{Y}<1>\NP{Z}){Y}){_}'
-
