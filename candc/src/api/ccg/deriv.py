@@ -1,4 +1,3 @@
-
 import colours
 import cfg
 from cat import Cat
@@ -308,5 +307,3 @@ def leaves(root):
         stack.append(current.r)
       if current.l:
         stack.append(current.l)
-
-
