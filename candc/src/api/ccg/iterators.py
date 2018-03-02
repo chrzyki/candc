@@ -1,4 +1,3 @@
-
 def pre_order(visitor, node):
   visitor(node)
   if node.l:
