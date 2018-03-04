@@ -1,4 +1,3 @@
-
 import colours
 
 class Node:
