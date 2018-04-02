@@ -1,5 +1,3 @@
-#!/usr/bin/python2.2
-
 from sys import stderr, argv, exit
 from string import join
 
