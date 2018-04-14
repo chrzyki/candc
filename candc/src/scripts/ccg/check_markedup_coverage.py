@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import sys
 
 def ignore_preface(lines):
