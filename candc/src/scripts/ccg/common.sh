@@ -1,3 +1,4 @@
+#!/bin/bash
 
 PROGRAM=`basename $0`
 
