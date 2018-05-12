@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # C&C NLP tools
 # Copyright (c) Universities of Edinburgh, Oxford and Sydney
 # Copyright (c) James R. Curran
