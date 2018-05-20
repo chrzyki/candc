@@ -1,4 +1,3 @@
-#!/usr/bin/python2.3
 # -*- coding: utf8 -*-
 # C&C NLP tools
 # Copyright (c) Universities of Edinburgh, Oxford and Sydney
