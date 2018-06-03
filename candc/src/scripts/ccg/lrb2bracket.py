@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import sys
 
 
@@ -23,4 +21,3 @@ def trans(x):
 
 for line in sys.stdin:
   print ' '.join(map(trans, line.split()))
-
