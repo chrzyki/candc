@@ -1,7 +1,4 @@
-#!/usr/bin/python
-
 import re, sys
-#import os, argparse
 import os
 
 def syncone(RTE_dir):
