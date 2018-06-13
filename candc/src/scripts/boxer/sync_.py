@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import re, sys
 #import os, argparse
 import os
