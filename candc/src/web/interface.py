@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# vim: set st=2 sts=2 sw=2 et ai:
 # C&C NLP tools
 # Copyright (c) Universities of Edinburgh, Oxford and Sydney
 # Copyright (c) James R. Curran
