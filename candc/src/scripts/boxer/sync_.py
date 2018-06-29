@@ -1,9 +1,7 @@
 import re, sys
-#import os, argparse
 import os
 
 def syncone(RTE_dir):
-
     tccg = RTE_dir + "/t.ccg"
     hccg = RTE_dir + "/h.ccg"
     htemp = RTE_dir + "/h.ccg.temp"
