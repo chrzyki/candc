@@ -1,5 +1,3 @@
-#!/usr/bin/perl -w
-
 @fields = split /,/, shift;
 @sentence = ();
 
