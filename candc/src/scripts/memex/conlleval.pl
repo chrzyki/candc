@@ -1,4 +1,3 @@
-#!/usr/bin/perl -w
 # conlleval: evaluate result of processing CoNLL-2000 shared task
 # usage:     conlleval < file
 # note:      the file should contain lines with items separated
