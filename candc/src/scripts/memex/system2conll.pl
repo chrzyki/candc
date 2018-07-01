@@ -1,5 +1,3 @@
-#!/usr/bin/perl -w
-
 $GOLD = shift;
 $TEST = shift;
 
