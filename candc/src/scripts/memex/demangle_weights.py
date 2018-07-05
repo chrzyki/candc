@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from sys import argv, exit
 from string import join
 
