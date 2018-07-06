@@ -1,5 +1,3 @@
-#!/usr/bin/perl -w
-
 use vars qw($c_pos);
 
 $FILE1 = shift;
