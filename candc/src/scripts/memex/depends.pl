@@ -1,5 +1,3 @@
-#!/usr/bin/perl -w
-
 $DEPENDS = shift;
 
 while(@ARGV){
