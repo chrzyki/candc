@@ -1,4 +1,3 @@
-#!/usr/bin/perl
 # converts Julia's predarg dependencies into C&C parser dependencies
 # C&C NLP tools
 # Copyright (c) Universities of Edinburgh, Oxford and Sydney
