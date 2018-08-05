@@ -1,4 +1,3 @@
-#!/usr/bin/env perl
 # merges rules counts from a directory containing counts.*.out files
 # C&C NLP tools
 # Copyright (c) Universities of Edinburgh, Oxford and Sydney
