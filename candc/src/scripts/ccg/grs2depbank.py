@@ -120,12 +120,12 @@ class Sentence:
                 gr = GR('(conj %s %s)' % (w, prev), self.words)
                 self.grs.append(gr)
                 w.grs.append(gr)
-                
+
                 next = self.sentence[w.index + 1]
                 gr = GR('(conj %s %s)' % (w, next), self.words)
                 self.grs.append(gr)
                 w.grs.append(gr)
-                
+
     def merge_conj_args(self):
         for w in self.sentence:
             if w.cat == 'conj':
@@ -159,7 +159,7 @@ class Sentence:
                 conj = [gr for gr in w.grs if gr.label == 'conj']
                 for gr in conj:
                     gr.ignore = True
-                    
+
                 if len(conj) == 2:
                     head, mod = sorted([conj[0].args[1], conj[1].args[1]])
 
@@ -283,7 +283,7 @@ class Sentence:
                 that = gr.args[0]
                 for gr2 in that.grs:
                     if gr2.label == "ncsubj" and gr2.args[1] == that:
-                        gr2.args[1] = gr.args[1]                    
+                        gr2.args[1] = gr.args[1]
 
 def read(filename, OUTPUT, ADD374):
     grs = []
@@ -325,12 +325,12 @@ ADD374 = OUTPUT in ['--text', '--pos']
 for i, s in enumerate(read(FILENAME, OUTPUT, ADD374)):
     if POSTPROCESS:
         s.postprocess()
-    
+
     if OUTPUT == '--ccgbank':
         for gr in s.grs:
             if not gr.ignore:
                 print gr
-                
+
         print '<c>',
         for w in s.sentence:
             print '%s|%s|%s' % (w.token, w.pos, w.cat),
