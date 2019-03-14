@@ -20,7 +20,7 @@ In this repository I want to provided access to the original release sources and
 
 For the push to the 2614M SVN version I also included all *.out and *.o files. These were in the original SVN tree and I decided to add them for the sake of completeness.
 
-See the [releases section](https://github.com/chrzyki/candc/releases) for a preserved original state of the sources.
+See the [releases section](https://github.com/chrzyki/candc/releases) for a preserved original state of the sources. You can safely go there and completely ignore all my small 'update' commits which I mostly just did while working through the scripts and sources to get a better understanding of how everything in here plays together.
 
 # License
 
